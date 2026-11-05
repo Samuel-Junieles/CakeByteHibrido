@@ -1,0 +1,151 @@
+/* Core CSS required for Ionic components to work properly */
+@import "@ionic/angular/css/core.css";
+
+/* Basic CSS for apps built with Ionic */
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+
+/* Optional CSS utils */
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--ion-background-color);
+  color: var(--ion-text-color);
+  font-family: var(--ion-font-family);
+}
+
+/* Diseño Web Real Responsive (sin emulación de marco de teléfono) */
+.cb-container {
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 24px 32px;
+}
+
+@media (max-width: 768px) {
+  .cb-container {
+    padding: 16px;
+  }
+}
+
+.cb-card {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid var(--cb-border);
+  box-shadow: 0 8px 28px rgba(35, 25, 23, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cb-card:hover {
+  box-shadow: 0 12px 34px rgba(255, 139, 106, 0.12);
+}
+
+.cb-btn-primary {
+  background: linear-gradient(135deg, #FF8B6A 0%, #FF6F47 100%);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 22px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 6px 16px rgba(255, 139, 106, 0.28);
+}
+
+.cb-btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(255, 139, 106, 0.38);
+}
+
+.cb-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cb-btn-outline {
+  background: #fff;
+  color: var(--cb-salmon);
+  border: 1.5px solid var(--cb-salmon);
+  border-radius: 14px;
+  padding: 10px 18px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.cb-btn-outline:hover {
+  background: var(--cb-salmon-soft);
+}
+
+.cb-input, .cb-select, .cb-textarea {
+  width: 100%;
+  background: var(--cb-salmon-soft);
+  border: 1.5px solid transparent;
+  border-radius: 14px;
+  padding: 13px 16px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: #231917;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.cb-input:focus, .cb-select:focus, .cb-textarea:focus {
+  outline: none;
+  background: #fff;
+  border-color: var(--cb-salmon);
+}
+
+.cb-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.cb-badge-green {
+  background: #C8E6C9;
+  color: #2E7D32;
+}
+
+.cb-badge-red {
+  background: #FFCDD2;
+  color: #D32F2F;
+}
+
+.cb-badge-yellow {
+  background: #FFF8E1;
+  color: #E65100;
+}
+
+.cb-badge-role {
+  background: #FEE7E0;
+  color: #D84315;
+}
+

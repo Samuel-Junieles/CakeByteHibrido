@@ -1,0 +1,207 @@
+<resources>
+    <string name="app_name">CakeByte</string>
+    <string name="title_cake_byte">CakeByte</string>
+    <string name="slogan_cake_byte">Tu pastel a un click de distancia</string>
+    <string name="title_onboarding_1">Delicias dulces sin fin</string>
+    <string name="desc_onboarding_1">Déjate llevar por un mundo de deliciosos postres que saciarán tu gusto por lo dulce con nuestra amplia selección de pasteles, cupcakes y galletas.</string>
+    <string name="title_onboarding_2">Crea el pastel de tus sueños</string>
+    <string name="desc_onboarding_2">Nuestras opciones flexibles de pasteles personalizados te permiten adaptar cada detalle de tu pastel para que sea verdaderamente único.</string>
+    <string name="title_onboarding_3">Pedidos sin complicaciones</string>
+    <string name="desc_onboarding_3">Disfruta de una experiencia de compra fluida y cómoda con nuestra plataforma en línea, que te permite recibir tu pastel directamente en tu domicilio.</string>
+    <string name="btn_start">Empieza a comprar</string>
+
+    <!-- Login -->
+    <string name="login_title">Iniciar Sesión</string>
+    <string name="email_label">Correo electrónico</string>
+    <string name="email_hint">usuario@gmail.com</string>
+    <string name="password_label">Contraseña</string>
+    <string name="forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="password_hint">********</string>
+    <string name="error_password">Por favor ingresa la contraseña correcta</string>
+    <string name="or_sign_in_with">o inicia sesión con</string>
+    <string name="keep_me_signed_in">Mantenerme conectado</string>
+    <string name="login_button">Ingresar</string>
+    <string name="login_google">Continuar con Google</string>
+    <string name="btn_biometric_text">Acceder con huella</string>
+
+    <!-- Register -->
+    <string name="register_title">Registrarse</string>
+    <string name="or_sign_up_with">o regístrate con</string>
+    <string name="full_name_label">Nombre</string>
+    <string name="full_name_hint">Juan</string>
+    <string name="confirm_password_label">Confirmar contraseña</string>
+    <string name="terms_and_privacy">Al crear una cuenta, acepto los Términos de Uso y la Política de Privacidad</string>
+    <string name="signup_button">Registrarse</string>
+    <string name="select_role">Selecciona tu rol:</string>
+
+    <!-- Navigation -->
+    <string name="dont_have_account">¿No tienes una cuenta? Regístrate</string>
+    <string name="already_have_account">¿Ya tienes una cuenta? Inicia sesión</string>
+    <string name="navigation_cart">Mi Carrito</string>
+    <string name="nav_dashboard">Inicio</string>
+    <string name="nav_users">Usuarios</string>
+    <string name="nav_products">Productos</string>
+    <string name="nav_reports">Reportes</string>
+    <string name="nav_profile">Perfil</string>
+    <string name="nav_home">Inicio</string>
+    <string name="nav_orders">Pedidos</string>
+    <string name="welcome_user">¡Hola! 👋</string>
+    <string name="welcome_message">Bienvenido %1$s a CakeByte</string>
+    <string name="choose_cake">Explorar Categorías</string>
+    <string name="category_beverages">Bebidas</string>
+    <string name="category_bread">Pan</string>
+    <string name="category_cakes">Pasteles</string>
+    <string name="category_cookies">Galletas</string>
+    <string name="search_hint">Buscar</string>
+    <string name="back">Atrás</string>
+
+    <!-- Admin Dashboard -->
+    <string name="dashboard_title">Dashboard</string>
+    <string name="ventas_dia">Ventas del día</string>
+    <string name="pedidos">Pedidos</string>
+    <string name="ganancias_totales">Ganancias totales</string>
+    <string name="total_sales">Ventas Totales</string>
+    <string name="label_total_sales">Ventas totales</string>
+
+    <!-- Forgot Password -->
+    <string name="title_forgot_password">Recuperar Contraseña</string>
+    <string name="desc_forgot_password">Ingresa tu correo electrónico para recibir las instrucciones de recuperación.</string>
+    <string name="btn_send_link">Enviar enlace</string>
+
+    <!-- User Profile -->
+    <string name="title_profile">Perfil</string>
+    <string name="menu_edit_profile">Editar Perfil</string>
+    <string name="menu_notifications">Notificaciones</string>
+    <string name="menu_help">Ayuda y Soporte</string>
+    <string name="menu_contact">Contáctanos</string>
+    <string name="menu_privacy">Política de Privacidad</string>
+    <string name="btn_logout">Cerrar Sesión</string>
+    <string name="label_on">ON</string>
+    <string name="menu_logout">Cerrar sesión</string>
+    <string name="menu_logout_v">Cerrar sesión</string>
+
+    <!-- Edit Profile -->
+    <string name="title_edit_profile">Editar Perfil</string>
+    <string name="label_full_name">Nombre completo</string>
+    <string name="label_email_edit">Email</string>
+    <string name="label_address">Dirección</string>
+    <string name="label_phone">Teléfono</string>
+    <string name="btn_save">GUARDAR</string>
+
+    <!-- Admin Users -->
+    <string name="title_users">Usuarios</string>
+    <string name="search_user_hint">Buscar Usuario</string>
+    <string name="filter_all">Todos</string>
+    <string name="filter_admin">Admin</string>
+    <string name="filter_vendor">Vendedor</string>
+    <string name="btn_create_user">Crear Usuario</string>
+
+    <!-- Create User -->
+    <string name="title_create_user">Crear Usuario</string>
+    <string name="label_name">Nombre</string>
+    <string name="hint_name">Juan</string>
+    <string name="label_surname">Apellido</string>
+    <string name="hint_surname">Flores</string>
+    <string name="label_email">Correo</string>
+    <string name="hint_email">email@dominio.com</string>
+    <string name="label_phone_admin">Teléfono</string>
+    <string name="hint_phone">+57 3044764338</string>
+    <string name="label_role">Rol</string>
+    <string name="btn_cancel">Cancelar</string>
+
+    <!-- Admin Products -->
+    <string name="title_admin_products">Gestión de productos</string>
+    <string name="hint_search_food">Buscar Alimento</string>
+    <string name="filter_active">Activo</string>
+    <string name="filter_suspended">Suspendido</string>
+    <string name="btn_add_product">Agregar Producto</string>
+    <string name="label_stock_info">%1$s · Stock: %2$d</string>
+    <string name="status_active">Activa</string>
+    <string name="status_suspended">Suspendido</string>
+
+    <!-- Admin Reports -->
+    <string name="title_admin_reports">Reporte de ventas</string>
+    <string name="filter_day">Hoy</string>
+    <string name="filter_week">Semana</string>
+    <string name="filter_month">Mes</string>
+    <string name="filter_year">Año</string>
+    <string name="label_total_income">Total ingresos</string>
+    <string name="label_completed_orders">Pedidos Completados</string>
+    <string name="label_top_products">Top 3 productos</string>
+    <string name="label_details">Detalles</string>
+
+    <!-- Vendor -->
+    <string name="title_my_products">Mis Productos</string>
+    <string name="btn_add">+Agregar</string>
+    <string name="filter_all_v">Todos</string>
+    <string name="filter_bread">Pan</string>
+    <string name="filter_cakes">Pasteles</string>
+    <string name="filter_cookies">Galletas</string>
+    <string name="title_add_product">Agregar Producto</string>
+    <string name="title_edit_product">Editar Producto</string>
+    <string name="label_product_name">Nombre del producto</string>
+    <string name="hint_product_name">Tarta de fresa</string>
+    <string name="label_description">Descripción</string>
+    <string name="hint_description">Ingredientes, tamaño, etc.</string>
+    <string name="label_price">Precio</string>
+    <string name="label_category">Categoría</string>
+    <string name="label_stock_available">Stock disponible</string>
+    <string name="btn_publish">Publicar</string>
+
+    <!-- Product Detail -->
+    <string name="see_reviews">Ver reseñas</string>
+    <string name="allergens_label">Alérgenos: </string>
+    <string name="add_to_cart">Añadir al carrito</string>
+    <string name="total_price_label">Precio total</string>
+    <string name="note_hint">Añade un mensaje en tu pastel (opcional)</string>
+
+    <!-- Vendedor Orders -->
+    <string name="filter_pending">Pendiente</string>
+    <string name="filter_delivered">Entregado</string>
+    <string name="label_order_id">Pedido #%1$d · %2$s</string>
+
+    <!-- Vendedor Stats -->
+    <string name="label_total_sales_stat">Ventas totales</string>
+    <string name="label_active_products">Productos activos</string>
+
+    <!-- Checkout -->
+    <string name="checkout_title">Finalizar Compra</string>
+    <string name="address_label">Dirección de entrega</string>
+    <string name="payment_method_label">Método de pago</string>
+    <string name="payment_card">Tarjeta de Crédito / Débito</string>
+    <string name="payment_cash">Efectivo contra entrega</string>
+    <string name="payment_transfer">Transferencia bancaria</string>
+    <string name="summary_label">Resumen</string>
+    <string name="subtotal_label">Subtotal</string>
+    <string name="shipping_label">Envío</string>
+    <string name="total_label">Total</string>
+    <string name="btn_checkout">Continuar al pago</string>
+    <string name="btn_confirm_order">Confirmar Pedido</string>
+
+    <!-- Checkout Details -->
+    <string name="label_debit">Débito</string>
+    <string name="label_card_mask">**** 6789</string>
+    <string name="btn_add_card">Agregar Tarjeta Débito/Crédito</string>
+    <string name="title_complete_info">Completa la información</string>
+    <string name="hint_card_holder">Nombre del titular</string>
+    <string name="hint_card_number">Número de tarjeta</string>
+    <string name="hint_cvv">CVC/CVV</string>
+    <string name="hint_expiry">Fecha de Vencimiento</string>
+    <string name="label_save_card">Guardar esta tarjeta de forma segura</string>
+    <string name="btn_pay">PAGAR</string>
+
+    <!-- Success Screen -->
+    <string name="title_success">TRANSACCIÓN EXITOSA</string>
+    <string name="label_transaction_status">Estado de transacción</string>
+    <string name="label_merchant">Nombre del comercio</string>
+    <string name="label_payment_date">Fecha de pago</string>
+    <string name="label_payment_time">Hora de pago</string>
+    <string name="label_transaction_id">ID de la transacción</string>
+    <string name="label_cus">CUS</string>
+    <string name="label_concept">Concepto</string>
+    <string name="btn_return_home">REGRESAR AL INICIO</string>
+
+    <!-- Stock Filters -->
+    <string name="filter_in_stock">En stock</string>
+    <string name="filter_out_of_stock">Fuera de stock</string>
+</resources>

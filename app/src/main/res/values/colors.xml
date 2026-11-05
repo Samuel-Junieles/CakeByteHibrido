@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="salmon_primary">#FF8B6A</color>
+    <color name="salmon_secondary">#FFA07A</color>
+    <color name="indicator_inactive">#EEEEEE</color>
+    <color name="text_secondary">#757575</color>
+
+    <!-- Admin Dashboard Cards -->
+    <color name="card_sales_bg">#FFF8E1</color>
+    <color name="card_orders_bg">#E8F5E9</color>
+    <color name="card_total_bg">#FCE4EC</color>
+
+    <!-- Badges & Percentages -->
+    <color name="percentage_red">#FFCDD2</color>
+    <color name="percentage_green">#C8E6C9</color>
+    <color name="text_red">#D32F2F</color>
+    <color name="text_green">#388E3C</color>
+
+    <!-- Icons -->
+    <color name="icon_orange">#FFA000</color>
+    <color name="icon_green">#43A047</color>
+    <color name="icon_purple">#8E24AA</color>
+
+    <!-- Admin User/Product Management -->
+    <color name="search_bg">#FFCCBC</color>
+    <color name="chip_all_bg">#FFEBEE</color>
+    <color name="chip_admin_bg">#E8F5E9</color>
+    <color name="chip_vendor_bg">#F5F5F5</color>
+    <color name="chip_active_bg">#C8E6C9</color>
+    <color name="chip_suspended_bg">#FFCDD2</color>
+    <color name="role_admin_text">#2E7D32</color>
+    <color name="role_vendor_text">#616161</color>
+    <color name="input_bg">#FEE7E0</color>
+
+    <!-- Admin Reports -->
+    <color name="report_card_bg">#FFF0EB</color>
+    <color name="chart_line">#8E24AA</color>
+
+    <!-- Product Detail -->
+    <color name="size_btn_border">#E0E0E0</color>
+    <color name="rating_star">#FFB300</color>
+</resources>

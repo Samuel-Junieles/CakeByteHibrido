@@ -1,0 +1,60 @@
+:root {
+  /* Paleta original de CakeByteApp (colors.xml) */
+  --ion-color-primary: #FF8B6A;
+  --ion-color-primary-rgb: 255, 139, 106;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #e07a5d;
+  --ion-color-primary-tint: #ff9779;
+
+  --ion-color-secondary: #FFA07A;
+  --ion-color-secondary-rgb: 255, 160, 122;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #e08d6b;
+  --ion-color-secondary-tint: #ffaa87;
+
+  --ion-color-tertiary: #8E24AA;
+  --ion-color-tertiary-rgb: 142, 36, 170;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #7d2096;
+  --ion-color-tertiary-tint: #993ab3;
+
+  --ion-color-success: #388E3C;
+  --ion-color-success-rgb: 56, 142, 60;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #317d35;
+  --ion-color-success-tint: #4c9950;
+
+  --ion-color-warning: #FFA000;
+  --ion-color-warning-rgb: 255, 160, 0;
+  --ion-color-warning-contrast: #000000;
+  --ion-color-warning-contrast-rgb: 0, 0, 0;
+  --ion-color-warning-shade: #e08d00;
+  --ion-color-warning-tint: #ffaa1a;
+
+  --ion-color-danger: #D32F2F;
+  --ion-color-danger-rgb: 211, 47, 47;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #ba2929;
+  --ion-color-danger-tint: #d74444;
+
+  --ion-font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --ion-background-color: #FFFBF9;
+  --ion-text-color: #231917;
+
+  /* Variables personalizadas de CakeByteApp */
+  --cb-salmon: #FF8B6A;
+  --cb-salmon-soft: #FEE7E0;
+  --cb-salmon-hover: #f37452;
+  --cb-card-sales: #FFF8E1;
+  --cb-card-orders: #E8F5E9;
+  --cb-card-total: #FCE4EC;
+  --cb-surface: #FFFFFF;
+  --cb-border: #F3E5E0;
+  --cb-muted: #757575;
+}
+

@@ -1,0 +1,8 @@
+{
+  "name": "CakeByteApp",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
+
