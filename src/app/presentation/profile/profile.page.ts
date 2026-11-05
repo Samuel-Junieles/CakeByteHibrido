@@ -16,9 +16,206 @@ import { UserEntity } from '../../domain/models/models';
     <ion-content [fullscreen]="true">
       <app-navbar [user]="currentUser"></app-navbar>
 
-      <main class="cb-container">
-        <div *ngIf="toastMessage" class="floating-toast">{{ toastMessage }}</div>
+      <div *ngIf="toastMessage" class="floating-toast">{{ toastMessage }}</div>
 
+      <input
+        #profileFileInput
+        type="file"
+        accept="image/*"
+        style="display: none"
+        (change)="onFileSelected($event)"
+      />
+
+      <!-- ============================================================== -->
+      <!-- VISTA MÓVIL ORIGINAL (<= 768px): activity_user_profile.xml     -->
+      <!-- ============================================================== -->
+      <div class="mobile-profile-flow" *ngIf="currentUser">
+        <!-- VISTA PRINCIPAL DEL PERFIL MÓVIL (activity_user_profile.xml) -->
+        <div *ngIf="!mobileEditMode" class="m-profile-main">
+          <div class="m-header-salmon"></div>
+
+          <div class="m-avatar-container">
+            <img
+              [src]="avatarPreview || currentUser.avatarUrl || 'assets/images/logo_cake_byte_app_original.png'"
+              alt="Foto de Perfil"
+              class="m-avatar-circle"
+            />
+            <button
+              type="button"
+              class="m-btn-edit-avatar"
+              (click)="showMobilePhotoSheet = true"
+              title="Cambiar foto de perfil"
+            >
+              ✎
+            </button>
+          </div>
+
+          <h1 class="m-user-name">{{ currentUser.name }}</h1>
+          <p class="m-user-email">{{ currentUser.email }}</p>
+
+          <!-- Tarjeta 1: Editar Perfil + Notificaciones -->
+          <div class="m-menu-card">
+            <div class="m-menu-row" (click)="mobileEditMode = true">
+              <span class="m-menu-text">Editar Perfil</span>
+              <span class="m-menu-chevron">›</span>
+            </div>
+            <div class="m-menu-divider"></div>
+            <div class="m-menu-row">
+              <span class="m-menu-text">Notificaciones</span>
+              <span class="m-menu-status">ON</span>
+            </div>
+          </div>
+
+          <!-- Tarjeta 2: Ayuda, Contacto, Privacidad -->
+          <div class="m-menu-card">
+            <div class="m-menu-row" (click)="showToast('Soporte CakeByte disponible en línea')">
+              <span class="m-menu-text">Ayuda y Soporte</span>
+              <span class="m-menu-chevron">›</span>
+            </div>
+            <div class="m-menu-divider"></div>
+            <div class="m-menu-row" (click)="showToast('Contacto: soporte@cakebyte.com')">
+              <span class="m-menu-text">Contáctanos</span>
+              <span class="m-menu-chevron">›</span>
+            </div>
+            <div class="m-menu-divider"></div>
+            <div class="m-menu-row" (click)="showToast('Tus datos están protegidos en Supabase')">
+              <span class="m-menu-text">Política de Privacidad</span>
+              <span class="m-menu-chevron">›</span>
+            </div>
+          </div>
+
+          <button type="button" class="m-btn-logout-red" (click)="logout()">
+            Cerrar Sesión
+          </button>
+        </div>
+
+        <!-- VISTA EDITAR PERFIL MÓVIL (activity_edit_profile.xml) -->
+        <div *ngIf="mobileEditMode" class="m-edit-profile-screen">
+          <div class="m-edit-top">
+            <button type="button" class="m-back-btn" (click)="mobileEditMode = false">←</button>
+            <h1 class="m-edit-title">Editar Perfil</h1>
+            <span style="width: 40px"></span>
+          </div>
+
+          <form (ngSubmit)="saveProfile(); mobileEditMode = false" class="m-edit-form">
+            <div class="m-input-group">
+              <label>Nombre completo</label>
+              <input type="text" [(ngModel)]="editName" name="mEditName" required />
+            </div>
+
+            <div class="m-input-group">
+              <label>Email</label>
+              <input type="email" [value]="currentUser.email" disabled />
+            </div>
+
+            <div class="m-input-group">
+              <label>Dirección</label>
+              <input type="text" [(ngModel)]="editAddress" name="mEditAddress" />
+            </div>
+
+            <div class="m-input-group">
+              <label>Teléfono</label>
+              <input type="tel" [(ngModel)]="editPhone" name="mEditPhone" />
+            </div>
+
+            <button type="submit" class="m-btn-save" [disabled]="saving">
+              {{ saving ? 'GUARDANDO...' : 'GUARDAR' }}
+            </button>
+          </form>
+        </div>
+
+        <!-- HOJA DE OPCIONES PARA CÁMARA Y GALERÍA EN MÓVIL -->
+        <div
+          class="modal-backdrop"
+          *ngIf="showMobilePhotoSheet"
+          (click)="showMobilePhotoSheet = false"
+        >
+          <div class="m-photo-sheet" (click)="$event.stopPropagation()">
+            <h3>Foto de Perfil</h3>
+            <p>Elige cómo deseas actualizar tu foto</p>
+            <button
+              type="button"
+              class="m-sheet-btn primary"
+              (click)="showMobilePhotoSheet = false; takeProfilePhoto()"
+            >
+              Tomar foto con la Cámara
+            </button>
+            <button
+              type="button"
+              class="m-sheet-btn outline"
+              (click)="showMobilePhotoSheet = false; pickProfileFromGallery()"
+            >
+              Elegir de la Galería del Teléfono
+            </button>
+            <button
+              type="button"
+              class="m-sheet-btn cancel"
+              (click)="showMobilePhotoSheet = false"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+
+        <!-- BOTTOM NAVIGATION BAR SEGÚN EL ROL DEL USUARIO -->
+        <nav class="m-bottom-nav" *ngIf="currentUser.role === 'Comprador'">
+          <button type="button" class="m-nav-btn" (click)="goRoleTab('/buyer', 'home')">
+            <ion-icon name="calendar-outline"></ion-icon>
+            <span>Inicio</span>
+          </button>
+          <button type="button" class="m-nav-btn" (click)="goRoleTab('/buyer', 'catalog')">
+            <ion-icon name="book-outline"></ion-icon>
+            <span>Catálogo</span>
+          </button>
+          <button type="button" class="m-nav-btn" (click)="goRoleTab('/buyer', 'cart')">
+            <ion-icon name="cart-outline"></ion-icon>
+            <span>Carrito</span>
+          </button>
+          <button type="button" class="m-nav-btn active">
+            <ion-icon name="person-outline"></ion-icon>
+            <span>Perfil</span>
+          </button>
+        </nav>
+
+        <nav class="m-bottom-nav cols-3" *ngIf="currentUser.role === 'Vendedor'">
+          <button type="button" class="m-nav-btn" (click)="goRoleRoute('/vendor')">
+            <ion-icon name="calendar-outline"></ion-icon>
+            <span>Inicio</span>
+          </button>
+          <button type="button" class="m-nav-btn" (click)="goRoleRoute('/vendor')">
+            <ion-icon name="grid-outline"></ion-icon>
+            <span>Productos</span>
+          </button>
+          <button type="button" class="m-nav-btn active">
+            <ion-icon name="person-outline"></ion-icon>
+            <span>Perfil</span>
+          </button>
+        </nav>
+
+        <nav class="m-bottom-nav" *ngIf="currentUser.role === 'Admin'">
+          <button type="button" class="m-nav-btn" (click)="goRoleRoute('/admin')">
+            <ion-icon name="calendar-outline"></ion-icon>
+            <span>Inicio</span>
+          </button>
+          <button type="button" class="m-nav-btn" (click)="goRoleRoute('/admin')">
+            <ion-icon name="people-outline"></ion-icon>
+            <span>Usuarios</span>
+          </button>
+          <button type="button" class="m-nav-btn" (click)="goRoleRoute('/admin')">
+            <ion-icon name="grid-outline"></ion-icon>
+            <span>Productos</span>
+          </button>
+          <button type="button" class="m-nav-btn active">
+            <ion-icon name="person-outline"></ion-icon>
+            <span>Perfil</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- VISTA ESCRITORIO WEB (> 768px)                                 -->
+      <!-- ============================================================== -->
+      <main class="cb-container desktop-profile-flow">
         <div class="profile-grid" *ngIf="currentUser">
           <!-- Tarjeta de Foto de Perfil con Cámara y Galería (PhotoService) -->
           <section class="profile-avatar-card cb-card">
@@ -54,13 +251,6 @@ import { UserEntity } from '../../domain/models/models';
                 >
                   Seleccionar Imagen del Dispositivo
                 </button>
-                <input
-                  #profileFileInput
-                  type="file"
-                  accept="image/*"
-                  style="display: none"
-                  (change)="onFileSelected($event)"
-                />
               </div>
             </div>
           </section>
@@ -145,6 +335,253 @@ import { UserEntity } from '../../domain/models/models';
     </ion-content>
   `,
   styles: [`
+    .mobile-profile-flow {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .desktop-profile-flow {
+        display: none !important;
+      }
+      .mobile-profile-flow {
+        display: block;
+        min-height: 100vh;
+        background: #F5F5F5;
+        padding-bottom: 84px;
+      }
+
+      /* PERFIL MÓVIL (activity_user_profile.xml) */
+      .m-profile-main {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .m-header-salmon {
+        width: 100%;
+        height: 150px;
+        background: #FFF1EB;
+      }
+      .m-avatar-container {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin-top: -60px;
+      }
+      .m-avatar-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #FFFFFF;
+        padding: 4px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      }
+      .m-btn-edit-avatar {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: none;
+        background: #FFFFFF;
+        color: #000000;
+        font-size: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+      .m-user-name {
+        margin: 12px 0 4px;
+        font-size: 22px;
+        font-weight: 700;
+        color: #000000;
+      }
+      .m-user-email {
+        margin: 0 0 20px;
+        font-size: 14px;
+        color: #757575;
+      }
+      .m-menu-card {
+        width: calc(100% - 48px);
+        background: #FFFFFF;
+        border-radius: 16px;
+        padding: 8px 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      }
+      .m-menu-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 13px 0;
+        cursor: pointer;
+      }
+      .m-menu-text {
+        font-size: 16px;
+        color: #000000;
+      }
+      .m-menu-chevron {
+        font-size: 20px;
+        color: #757575;
+      }
+      .m-menu-status {
+        font-size: 14px;
+        font-weight: 700;
+        color: #FF8B6A;
+      }
+      .m-menu-divider {
+        height: 1px;
+        background: #F0F0F0;
+      }
+      .m-btn-logout-red {
+        margin-top: 8px;
+        background: none;
+        border: none;
+        color: #D32F2F;
+        font-size: 16px;
+        font-weight: 700;
+        padding: 12px 24px;
+      }
+
+      /* EDITAR PERFIL MÓVIL (activity_edit_profile.xml) */
+      .m-edit-profile-screen {
+        min-height: 100vh;
+        background: #FFFFFF;
+        padding: 20px 24px 40px;
+      }
+      .m-edit-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 28px;
+      }
+      .m-back-btn {
+        width: 40px;
+        height: 40px;
+        border: none;
+        background: none;
+        font-size: 24px;
+        color: #000000;
+      }
+      .m-edit-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0;
+        color: #000000;
+      }
+      .m-edit-form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .m-input-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #757575;
+        margin-bottom: 6px;
+      }
+      .m-input-group input {
+        width: 100%;
+        padding: 14px 16px;
+        border: 1.5px solid #CCCCCC;
+        border-radius: 10px;
+        font-size: 15px;
+        color: #000000;
+      }
+      .m-btn-save {
+        margin-top: 28px;
+        width: 100%;
+        padding: 16px;
+        border: none;
+        border-radius: 12px;
+        background: #FF8B6A;
+        color: #FFFFFF;
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      /* HOJA CÁMARA Y GALERÍA */
+      .m-photo-sheet {
+        width: 100%;
+        max-width: 380px;
+        background: #FFFFFF;
+        border-radius: 24px;
+        padding: 24px;
+        text-align: center;
+      }
+      .m-photo-sheet h3 {
+        margin: 0 0 6px;
+        font-size: 18px;
+      }
+      .m-photo-sheet p {
+        margin: 0 0 18px;
+        font-size: 13px;
+        color: #757575;
+      }
+      .m-sheet-btn {
+        width: 100%;
+        padding: 14px;
+        border-radius: 14px;
+        font-weight: 700;
+        font-size: 15px;
+        margin-bottom: 10px;
+      }
+      .m-sheet-btn.primary {
+        background: #FF8B6A;
+        color: #FFFFFF;
+        border: none;
+      }
+      .m-sheet-btn.outline {
+        background: #FFF1EB;
+        color: #FF8B6A;
+        border: 1px solid #FF8B6A;
+      }
+      .m-sheet-btn.cancel {
+        background: #F5F5F5;
+        color: #424242;
+        border: none;
+        margin-bottom: 0;
+      }
+
+      /* BOTTOM NAV */
+      .m-bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: #FFFFFF;
+        border-top: 1px solid #EEEEEE;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        z-index: 150;
+      }
+      .m-bottom-nav.cols-3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .m-nav-btn {
+        background: none;
+        border: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        color: #9E9E9E;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .m-nav-btn ion-icon {
+        font-size: 20px;
+      }
+      .m-nav-btn.active {
+        color: #FF8B6A;
+      }
+    }
+
+    /* ============================================================ */
+    /* ESTILOS DE ESCRITORIO (> 768px)                              */
+    /* ============================================================ */
     .profile-grid {
       display: grid;
       grid-template-columns: 380px 1fr;
@@ -262,9 +699,20 @@ import { UserEntity } from '../../domain/models/models';
       font-weight: 700;
       cursor: pointer;
     }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(35, 25, 23, 0.55);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
     .floating-toast {
       position: fixed;
-      bottom: 24px;
+      bottom: 76px;
       right: 24px;
       background: #231917;
       color: #fff;
@@ -272,11 +720,6 @@ import { UserEntity } from '../../domain/models/models';
       border-radius: 14px;
       font-weight: 700;
       z-index: 300;
-    }
-    @media (max-width: 860px) {
-      .profile-grid, .grid-2 {
-        grid-template-columns: 1fr;
-      }
     }
   `],
 })
@@ -291,6 +734,10 @@ export class ProfilePage implements OnInit {
   avatarPreview: string | null = null;
   saving = false;
   toastMessage = '';
+
+  /* Estado móvil original */
+  mobileEditMode = false;
+  showMobilePhotoSheet = false;
 
   constructor(
     private authRepo: AuthRepository,
@@ -309,6 +756,14 @@ export class ProfilePage implements OnInit {
         this.avatarPreview = u.avatarUrl || null;
       }
     });
+  }
+
+  goRoleTab(route: string, tab: string): void {
+    this.router.navigate([route], { queryParams: { tab } });
+  }
+
+  goRoleRoute(route: string): void {
+    this.router.navigate([route]);
   }
 
   async takeProfilePhoto(): Promise<void> {
@@ -376,11 +831,10 @@ export class ProfilePage implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  private showToast(msg: string): void {
+  showToast(msg: string): void {
     this.toastMessage = msg;
     setTimeout(() => {
       if (this.toastMessage === msg) this.toastMessage = '';
     }, 3200);
   }
 }
-

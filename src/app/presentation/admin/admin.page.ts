@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 import { NavbarComponent } from '../shared/navbar.component';
 import { PhotoPickerComponent } from '../shared/photo-picker.component';
@@ -24,7 +25,207 @@ import {
     <ion-content [fullscreen]="true">
       <app-navbar [user]="currentUser"></app-navbar>
 
-      <main class="cb-container">
+      <div *ngIf="toastMessage" class="floating-toast">{{ toastMessage }}</div>
+
+      <!-- ============================================================== -->
+      <!-- VISTA MÓVIL ORIGINAL (<= 768px): Inicio, Usuarios, Productos   -->
+      <!-- ============================================================== -->
+      <div class="mobile-admin-flow">
+        <!-- 1. INICIO ADMIN MÓVIL (activity_admin_dashboard.xml) -->
+        <div *ngIf="activeSection === 'dashboard'" class="m-admin-dashboard">
+          <div class="m-welcome-container">
+            <h1 class="m-welcome-name">
+              Bienvenido {{ currentUser?.name || '' }} a CakeByte
+            </h1>
+          </div>
+
+          <div class="m-stats-stack">
+            <div class="m-stat-card sales">
+              <div class="m-stat-head">
+                <ion-icon name="calendar-outline" class="icon-sales"></ion-icon>
+                <span>Ventas del día</span>
+              </div>
+              <strong class="m-stat-value">{{ stats.dailySalesCount }}</strong>
+            </div>
+
+            <div class="m-stat-card orders">
+              <div class="m-stat-head">
+                <ion-icon name="add-circle-outline" class="icon-orders"></ion-icon>
+                <span>Pedidos</span>
+              </div>
+              <strong class="m-stat-value">{{ stats.totalOrders }}</strong>
+            </div>
+
+            <div class="m-stat-card earnings">
+              <div class="m-stat-head">
+                <ion-icon name="paper-plane-outline" class="icon-earnings"></ion-icon>
+                <span>Ganancias totales</span>
+              </div>
+              <strong class="m-stat-value">{{ formatCOP(stats.totalEarnings) }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. USUARIOS ADMIN MÓVIL (activity_admin_users.xml + item_user.xml) -->
+        <div *ngIf="activeSection === 'users'" class="m-admin-users">
+          <h1 class="m-screen-title">Usuarios</h1>
+
+          <div class="m-search-box">
+            <input
+              type="text"
+              class="m-search-input"
+              [(ngModel)]="userSearch"
+              placeholder="Buscar Usuario"
+            />
+          </div>
+
+          <div class="m-role-chips">
+            <button
+              type="button"
+              *ngFor="let r of ['Todos', 'Admin', 'Vendedor', 'Comprador']"
+              class="m-role-chip"
+              [class.active]="selectedRoleFilter === r"
+              (click)="selectedRoleFilter = r"
+            >
+              {{ r }}
+            </button>
+          </div>
+
+          <div class="m-users-list">
+            <div *ngFor="let u of filteredUsers" class="m-user-card">
+              <img
+                [src]="u.avatarUrl || 'assets/images/logo_cake_byte_app_original.png'"
+                alt="Avatar"
+                class="m-user-avatar"
+              />
+              <div class="m-user-info">
+                <h4>{{ u.name }}</h4>
+                <p>{{ u.email }}</p>
+                <span class="m-user-role-badge" [ngClass]="u.role.toLowerCase()">
+                  {{ u.role.toUpperCase() }}
+                </span>
+              </div>
+              <div class="m-user-actions">
+                <button type="button" class="m-icon-btn edit" (click)="openUserModal(u)">✎</button>
+                <button type="button" class="m-icon-btn del" (click)="removeUser(u)">X</button>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" class="m-fab" (click)="openUserModal()">+</button>
+        </div>
+
+        <!-- 3. PRODUCTOS ADMIN MÓVIL (activity_admin_products.xml) -->
+        <div *ngIf="activeSection === 'products'" class="m-admin-products">
+          <h1 class="m-screen-title">Gestión de productos</h1>
+
+          <div class="m-search-box">
+            <input
+              type="text"
+              class="m-search-input"
+              [(ngModel)]="productSearch"
+              placeholder="Buscar producto"
+            />
+          </div>
+
+          <div class="m-tabs-row">
+            <button
+              type="button"
+              *ngFor="let c of ['Todos', 'Pasteles', 'Galletas']"
+              class="m-tab-btn"
+              [class.active]="selectedAdminCategory === c"
+              (click)="selectedAdminCategory = c"
+            >
+              {{ c }}
+            </button>
+          </div>
+
+          <div class="m-stock-chips">
+            <button
+              type="button"
+              class="m-chip in-stock"
+              [class.selected]="selectedStockFilter === 'En stock'"
+              (click)="toggleMobileStock('En stock')"
+            >
+              En stock
+            </button>
+            <button
+              type="button"
+              class="m-chip out-stock"
+              [class.selected]="selectedStockFilter === 'Fuera de stock'"
+              (click)="toggleMobileStock('Fuera de stock')"
+            >
+              Fuera de stock
+            </button>
+          </div>
+
+          <div class="m-products-grid">
+            <div *ngFor="let p of filteredProducts" class="m-grid-card">
+              <div class="m-grid-img-wrap" (click)="openProductModal(p)">
+                <img [src]="getImage(p.imageurl)" [alt]="p.name" />
+                <span
+                  class="m-stock-badge"
+                  [class.in-stock]="p.stock > 1"
+                  [class.out-stock]="p.stock <= 1"
+                >
+                  {{ p.stock > 1 ? 'En stock' : 'Fuera de stock' }}
+                </span>
+              </div>
+              <div class="m-grid-footer">
+                <div class="m-grid-meta">
+                  <h4>{{ p.name }}</h4>
+                  <span>{{ formatCOP(p.price) }}</span>
+                </div>
+                <button type="button" class="m-grid-action" (click)="openProductModal(p)">
+                  ✎
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" class="m-fab" (click)="openProductModal()">+</button>
+        </div>
+
+        <!-- BOTTOM NAVIGATION BAR ORIGINAL (admin_bottom_menu.xml) -->
+        <nav class="m-bottom-nav">
+          <button
+            type="button"
+            class="m-nav-btn"
+            [class.active]="activeSection === 'dashboard'"
+            (click)="activeSection = 'dashboard'"
+          >
+            <ion-icon name="calendar-outline"></ion-icon>
+            <span>Inicio</span>
+          </button>
+          <button
+            type="button"
+            class="m-nav-btn"
+            [class.active]="activeSection === 'users'"
+            (click)="activeSection = 'users'"
+          >
+            <ion-icon name="people-outline"></ion-icon>
+            <span>Usuarios</span>
+          </button>
+          <button
+            type="button"
+            class="m-nav-btn"
+            [class.active]="activeSection === 'products'"
+            (click)="activeSection = 'products'"
+          >
+            <ion-icon name="grid-outline"></ion-icon>
+            <span>Productos</span>
+          </button>
+          <button type="button" class="m-nav-btn" (click)="goToProfile()">
+            <ion-icon name="person-outline"></ion-icon>
+            <span>Perfil</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- VISTA ESCRITORIO WEB (> 768px)                                 -->
+      <!-- ============================================================== -->
+      <main class="cb-container desktop-admin-flow">
         <header class="admin-header">
           <div>
             <span class="cb-badge cb-badge-role">Panel Administrativo</span>
@@ -59,8 +260,6 @@ import {
             </button>
           </div>
         </header>
-
-        <div *ngIf="toastMessage" class="floating-toast">{{ toastMessage }}</div>
 
         <!-- KPIs Globales -->
         <section class="kpi-grid">
@@ -298,170 +497,526 @@ import {
             </div>
           </div>
         </section>
+      </main>
 
-        <!-- MODAL CREAR / EDITAR USUARIO -->
-        <div class="modal-backdrop" *ngIf="editingUser" (click)="editingUser = null">
-          <form
-            class="modal-card cb-card"
-            (click)="$event.stopPropagation()"
-            (ngSubmit)="saveUserForm()"
-          >
-            <div class="modal-header">
-              <h2>{{ isEditingExistingUser ? 'Editar Usuario' : 'Agregar Nuevo Usuario al Sistema' }}</h2>
-              <button type="button" class="close-btn" (click)="editingUser = null">✕</button>
-            </div>
+      <!-- MODAL CREAR / EDITAR USUARIO (compartido móvil y web) -->
+      <div class="modal-backdrop" *ngIf="editingUser" (click)="editingUser = null">
+        <form
+          class="modal-card cb-card"
+          (click)="$event.stopPropagation()"
+          (ngSubmit)="saveUserForm()"
+        >
+          <div class="modal-header">
+            <h2>{{ isEditingExistingUser ? 'Editar Usuario' : 'Crear Usuario' }}</h2>
+            <button type="button" class="close-btn" (click)="editingUser = null">X</button>
+          </div>
 
-            <div class="form-grid-2">
-              <div class="form-group">
-                <label>Nombre *</label>
-                <input
-                  type="text"
-                  class="cb-input"
-                  [(ngModel)]="userFormName"
-                  name="userFormName"
-                  required
-                />
-              </div>
-              <div class="form-group">
-                <label>Apellido *</label>
-                <input
-                  type="text"
-                  class="cb-input"
-                  [(ngModel)]="userFormSurname"
-                  name="userFormSurname"
-                  required
-                />
-              </div>
-            </div>
-
+          <div class="form-grid-2">
             <div class="form-group">
-              <label>Correo electrónico *</label>
+              <label>Nombre *</label>
               <input
-                type="email"
+                type="text"
                 class="cb-input"
-                [(ngModel)]="editingUser.email"
-                name="userEmail"
-                [disabled]="isEditingExistingUser"
+                [(ngModel)]="userFormName"
+                name="userFormName"
                 required
               />
             </div>
-
-            <div class="form-group" *ngIf="!isEditingExistingUser">
-              <label>Contraseña *</label>
+            <div class="form-group">
+              <label>Apellido *</label>
               <input
-                type="password"
+                type="text"
                 class="cb-input"
-                [(ngModel)]="userFormPassword"
-                name="userFormPassword"
-                placeholder="Contraseña para el nuevo usuario"
+                [(ngModel)]="userFormSurname"
+                name="userFormSurname"
                 required
               />
             </div>
+          </div>
 
+          <div class="form-group">
+            <label>Correo electrónico *</label>
+            <input
+              type="email"
+              class="cb-input"
+              [(ngModel)]="editingUser.email"
+              name="userEmail"
+              [disabled]="isEditingExistingUser"
+              required
+            />
+          </div>
+
+          <div class="form-group" *ngIf="!isEditingExistingUser">
+            <label>Contraseña *</label>
+            <input
+              type="password"
+              class="cb-input"
+              [(ngModel)]="userFormPassword"
+              name="userFormPassword"
+              placeholder="Contraseña para el nuevo usuario"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Rol en CakeByte</label>
+            <select class="cb-select" [(ngModel)]="editingUser.role" name="userRole">
+              <option value="Comprador">Comprador</option>
+              <option value="Vendedor">Vendedor</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="cb-btn-outline" (click)="editingUser = null">
+              Cancelar
+            </button>
+            <button type="submit" class="cb-btn-primary">Guardar Usuario</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- MODAL CREAR / EDITAR PRODUCTO CON CÁMARA Y GALERÍA (compartido móvil y web) -->
+      <div class="modal-backdrop" *ngIf="editingProduct" (click)="editingProduct = null">
+        <form
+          class="modal-card cb-card"
+          (click)="$event.stopPropagation()"
+          (ngSubmit)="saveProductForm()"
+        >
+          <div class="modal-header">
+            <h2>{{ editingProduct.id ? 'Editar Producto' : 'Agregar Producto' }}</h2>
+            <button type="button" class="close-btn" (click)="editingProduct = null">X</button>
+          </div>
+
+          <app-photo-picker
+            label="Imagen del Producto (Cámara, Galería o Catálogo)"
+            [imageValue]="editingProduct.imageurl || 'torta_de_chocolate'"
+            [showPresets]="true"
+            (imageChange)="editingProduct.imageurl = $event"
+          ></app-photo-picker>
+
+          <div class="form-grid-2 mt-3">
             <div class="form-group">
-              <label>Rol en CakeByte</label>
-              <select class="cb-select" [(ngModel)]="editingUser.role" name="userRole">
-                <option value="Comprador">Comprador</option>
-                <option value="Vendedor">Vendedor</option>
-                <option value="Admin">Admin</option>
+              <label>Nombre del producto *</label>
+              <input
+                type="text"
+                class="cb-input"
+                [(ngModel)]="editingProduct.name"
+                name="adminProdName"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label>Categoría</label>
+              <select class="cb-select" [(ngModel)]="editingProduct.category" name="adminProdCat">
+                <option value="Pasteles">Pasteles</option>
+                <option value="Galletas">Galletas</option>
+                <option value="Pan">Pan</option>
+                <option value="Bebidas">Bebidas</option>
               </select>
             </div>
+          </div>
 
-            <div class="modal-footer">
-              <button type="button" class="cb-btn-outline" (click)="editingUser = null">
-                Cancelar
-              </button>
-              <button type="submit" class="cb-btn-primary">Guardar Usuario</button>
-            </div>
-          </form>
-        </div>
-
-        <!-- MODAL CREAR / EDITAR PRODUCTO CON CÁMARA Y GALERÍA -->
-        <div class="modal-backdrop" *ngIf="editingProduct" (click)="editingProduct = null">
-          <form
-            class="modal-card cb-card"
-            (click)="$event.stopPropagation()"
-            (ngSubmit)="saveProductForm()"
-          >
-            <div class="modal-header">
-              <h2>{{ editingProduct.id ? 'Editar Producto' : 'Agregar Producto' }}</h2>
-              <button type="button" class="close-btn" (click)="editingProduct = null">✕</button>
-            </div>
-
-            <app-photo-picker
-              label="Imagen del Producto (Cámara, Galería o Catálogo)"
-              [imageValue]="editingProduct.imageurl || 'torta_de_chocolate'"
-              [showPresets]="true"
-              (imageChange)="editingProduct.imageurl = $event"
-            ></app-photo-picker>
-
-            <div class="form-grid-2 mt-3">
-              <div class="form-group">
-                <label>Nombre del producto *</label>
-                <input
-                  type="text"
-                  class="cb-input"
-                  [(ngModel)]="editingProduct.name"
-                  name="adminProdName"
-                  required
-                />
-              </div>
-              <div class="form-group">
-                <label>Categoría</label>
-                <select class="cb-select" [(ngModel)]="editingProduct.category" name="adminProdCat">
-                  <option value="Pasteles">Pasteles</option>
-                  <option value="Galletas">Galletas</option>
-                  <option value="Pan">Pan</option>
-                  <option value="Bebidas">Bebidas</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-grid-2">
-              <div class="form-group">
-                <label>Precio (COP) *</label>
-                <input
-                  type="number"
-                  class="cb-input"
-                  [(ngModel)]="editingProduct.price"
-                  name="adminProdPrice"
-                  required
-                />
-              </div>
-              <div class="form-group">
-                <label>Stock *</label>
-                <input
-                  type="number"
-                  class="cb-input"
-                  [(ngModel)]="editingProduct.stock"
-                  name="adminProdStock"
-                  required
-                />
-              </div>
-            </div>
-
+          <div class="form-grid-2">
             <div class="form-group">
-              <label>Descripción</label>
-              <textarea
-                rows="3"
-                class="cb-textarea"
-                [(ngModel)]="editingProduct.description"
-                name="adminProdDesc"
-              ></textarea>
+              <label>Precio (COP) *</label>
+              <input
+                type="number"
+                class="cb-input"
+                [(ngModel)]="editingProduct.price"
+                name="adminProdPrice"
+                required
+              />
             </div>
+            <div class="form-group">
+              <label>Stock *</label>
+              <input
+                type="number"
+                class="cb-input"
+                [(ngModel)]="editingProduct.stock"
+                name="adminProdStock"
+                required
+              />
+            </div>
+          </div>
 
-            <div class="modal-footer">
-              <button type="button" class="cb-btn-outline" (click)="editingProduct = null">
-                Cancelar
-              </button>
-              <button type="submit" class="cb-btn-primary">Guardar Producto</button>
-            </div>
-          </form>
-        </div>
-      </main>
+          <div class="form-group">
+            <label>Descripción</label>
+            <textarea
+              rows="3"
+              class="cb-textarea"
+              [(ngModel)]="editingProduct.description"
+              name="adminProdDesc"
+            ></textarea>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              *ngIf="editingProduct.id"
+              type="button"
+              class="btn-del-xs"
+              (click)="removeProduct(editingProduct); editingProduct = null"
+            >
+              Eliminar
+            </button>
+            <button type="button" class="cb-btn-outline" (click)="editingProduct = null">
+              Cancelar
+            </button>
+            <button type="submit" class="cb-btn-primary">Guardar Producto</button>
+          </div>
+        </form>
+      </div>
     </ion-content>
   `,
   styles: [`
+    .mobile-admin-flow {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .desktop-admin-flow {
+        display: none !important;
+      }
+      .mobile-admin-flow {
+        display: block;
+        min-height: 100vh;
+        background: #FFFFFF;
+        padding-bottom: 84px;
+      }
+
+      /* 1. DASHBOARD ADMIN MÓVIL (activity_admin_dashboard.xml) */
+      .m-welcome-container {
+        padding: 48px 24px 0;
+      }
+      .m-welcome-name {
+        font-size: 20px;
+        font-weight: 700;
+        color: #FF8B6A;
+        margin: 0;
+      }
+      .m-stats-stack {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .m-stat-card {
+        border-radius: 24px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .m-stat-card.sales { background: #FFF8E1; }
+      .m-stat-card.orders { background: #E8F5E9; }
+      .m-stat-card.earnings { background: #FCE4EC; }
+      .m-stat-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 16px;
+        color: #000000;
+      }
+      .icon-sales { color: #FFA000; font-size: 22px; }
+      .icon-orders { color: #2E7D32; font-size: 22px; }
+      .icon-earnings { color: #C2185B; font-size: 22px; }
+      .m-stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #000000;
+      }
+
+      /* 2. USUARIOS ADMIN MÓVIL (activity_admin_users.xml + item_user.xml) */
+      .m-admin-users,
+      .m-admin-products {
+        padding: 32px 0 24px;
+      }
+      .m-screen-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #000000;
+        margin: 0 24px 16px;
+      }
+      .m-search-box {
+        padding: 0 24px;
+      }
+      .m-search-input {
+        width: 100%;
+        padding: 12px 18px;
+        border: 1.5px solid #CCCCCC;
+        border-radius: 24px;
+        font-size: 14px;
+        outline: none;
+      }
+      .m-role-chips {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 16px 24px 8px;
+      }
+      .m-role-chip {
+        border: none;
+        padding: 8px 16px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 700;
+        background: #F5F5F5;
+        color: #424242;
+        flex-shrink: 0;
+      }
+      .m-role-chip.active {
+        background: #FF8B6A;
+        color: #FFFFFF;
+      }
+      .m-users-list {
+        padding: 8px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .m-user-card {
+        background: #FFFFFF;
+        border-radius: 20px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .m-user-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #FF8B6A;
+        flex-shrink: 0;
+      }
+      .m-user-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .m-user-info h4 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #000000;
+      }
+      .m-user-info p {
+        margin: 2px 0 8px;
+        font-size: 13px;
+        color: #757575;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .m-user-role-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        background: #FFF1EB;
+        color: #FF8B6A;
+      }
+      .m-user-role-badge.admin {
+        background: #E8F5E9;
+        color: #2E7D32;
+      }
+      .m-user-role-badge.vendedor {
+        background: #FFF8E1;
+        color: #E65100;
+      }
+      .m-user-actions {
+        display: flex;
+        gap: 8px;
+      }
+      .m-icon-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: none;
+        font-weight: 700;
+        font-size: 14px;
+      }
+      .m-icon-btn.edit {
+        background: #FFF1EB;
+        color: #FF8B6A;
+      }
+      .m-icon-btn.del {
+        background: #FFEBEB;
+        color: #C62828;
+      }
+
+      /* 3. PRODUCTOS ADMIN MÓVIL (activity_admin_products.xml) */
+      .m-tabs-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        border-bottom: 1px solid #EEEEEE;
+        margin-top: 12px;
+      }
+      .m-tab-btn {
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        padding: 12px 8px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #757575;
+      }
+      .m-tab-btn.active {
+        color: #FF8B6A;
+        border-bottom-color: #FF8B6A;
+      }
+      .m-stock-chips {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin: 12px 0 6px;
+      }
+      .m-chip {
+        border: none;
+        padding: 7px 16px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .m-chip.in-stock {
+        background: #E8F5E9;
+        color: #2E7D32;
+      }
+      .m-chip.out-stock {
+        background: #FFEBEE;
+        color: #C62828;
+      }
+      .m-chip.selected {
+        outline: 2px solid #FF8B6A;
+      }
+      .m-products-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 10px 16px;
+      }
+      .m-grid-card {
+        background: #FFFFFF;
+        border-radius: 24px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        padding-bottom: 12px;
+      }
+      .m-grid-img-wrap {
+        position: relative;
+        height: 150px;
+      }
+      .m-grid-img-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .m-stock-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .m-stock-badge.in-stock {
+        background: #E8F5E9;
+        color: #2E7D32;
+      }
+      .m-stock-badge.out-stock {
+        background: #FFEBEE;
+        color: #C62828;
+      }
+      .m-grid-footer {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        padding: 8px 12px 0;
+        gap: 6px;
+      }
+      .m-grid-meta {
+        min-width: 0;
+      }
+      .m-grid-meta h4 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+        color: #000000;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .m-grid-meta span {
+        display: block;
+        margin-top: 2px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #FF8B6A;
+      }
+      .m-grid-action {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: none;
+        background: #FF8B6A;
+        color: #FFFFFF;
+        font-weight: 700;
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+      .m-fab {
+        position: fixed;
+        right: 24px;
+        bottom: 84px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: none;
+        background: #FF8B6A;
+        color: #FFFFFF;
+        font-size: 28px;
+        font-weight: 700;
+        box-shadow: 0 6px 18px rgba(255, 139, 106, 0.45);
+        z-index: 140;
+      }
+      .m-bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: #FFFFFF;
+        border-top: 1px solid #EEEEEE;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        z-index: 150;
+      }
+      .m-nav-btn {
+        background: none;
+        border: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        color: #9E9E9E;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .m-nav-btn ion-icon {
+        font-size: 20px;
+      }
+      .m-nav-btn.active {
+        color: #FF8B6A;
+      }
+    }
+
+    /* ============================================================ */
+    /* ESTILOS DE ESCRITORIO (> 768px)                              */
+    /* ============================================================ */
     .admin-header {
       display: flex;
       align-items: center;
@@ -756,7 +1311,7 @@ import {
     }
     .floating-toast {
       position: fixed;
-      bottom: 24px;
+      bottom: 76px;
       right: 24px;
       background: #231917;
       color: #fff;
@@ -784,6 +1339,7 @@ export class AdminPage implements OnInit {
   selectedRoleFilter = 'Todos';
 
   productSearch = '';
+  selectedAdminCategory = 'Todos';
   selectedStockFilter = 'Todos';
 
   editingUser: UserEntity | null = null;
@@ -798,7 +1354,8 @@ export class AdminPage implements OnInit {
   constructor(
     private authRepo: AuthRepository,
     private productRepo: ProductRepository,
-    private orderRepo: OrderRepository
+    private orderRepo: OrderRepository,
+    private router: Router
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -811,6 +1368,14 @@ export class AdminPage implements OnInit {
       this.productRepo.loadAllProducts(),
       this.orderRepo.loadAllOrders(),
     ]);
+  }
+
+  goToProfile(): void {
+    this.router.navigate(['/profile']);
+  }
+
+  toggleMobileStock(filter: string): void {
+    this.selectedStockFilter = this.selectedStockFilter === filter ? 'Todos' : filter;
   }
 
   async reloadUsers(): Promise<void> {
@@ -837,6 +1402,9 @@ export class AdminPage implements OnInit {
 
   get filteredProducts(): ProductEntity[] {
     return this.products.filter((p) => {
+      const matchCat =
+        this.selectedAdminCategory === 'Todos' ||
+        (p.category || '').toLowerCase() === this.selectedAdminCategory.toLowerCase();
       const matchQuery =
         !this.productSearch ||
         (p.name || '').toLowerCase().includes(this.productSearch.toLowerCase());
@@ -846,7 +1414,7 @@ export class AdminPage implements OnInit {
           : this.selectedStockFilter === 'En stock'
           ? Number(p.stock) > 1
           : Number(p.stock) <= 1;
-      return matchQuery && matchStock;
+      return matchCat && matchQuery && matchStock;
     });
   }
 
@@ -976,4 +1544,3 @@ export class AdminPage implements OnInit {
     }, 3200);
   }
 }
-

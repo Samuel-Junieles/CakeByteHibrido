@@ -33,19 +33,8 @@ class VendorProductAdapter(
             val currencyFormatter = NumberFormat.getCurrencyInstance(colombianLocale)
             binding.tvProductPrice.text = currencyFormatter.format(product.safePrice)
 
-            val imageName = product.imageUrl ?: ""
             val context = binding.root.context
-            val resId = if (imageName.isNotEmpty()) {
-                context.resources.getIdentifier(imageName, "drawable", context.packageName)
-            } else {
-                0
-            }
-            
-            if (resId != 0) {
-                binding.ivProduct.setImageResource(resId)
-            } else {
-                binding.ivProduct.setImageResource(R.drawable.torta_de_chocolate)
-            }
+            com.example.cakebyteapp.util.ImageHelper.bindProductImage(binding.ivProduct, product.imageUrl)
 
             // Logic for Stock Badge (Threshold: 1)
             if (product.safeStock > 1) {

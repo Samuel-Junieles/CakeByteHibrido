@@ -55,18 +55,7 @@ class ProductDetailActivity : AppCompatActivity() {
                         binding.tvDescription.text = it.description
 
                         // Carga de imagen
-                        val imageName = it.imageUrl ?: ""
-                        val resId = if (imageName.isNotEmpty()) {
-                            resources.getIdentifier(imageName, "drawable", packageName)
-                        } else {
-                            0
-                        }
-                        
-                        if (resId != 0) {
-                            binding.ivProduct.setImageResource(resId)
-                        } else {
-                            binding.ivProduct.setImageResource(R.drawable.torta_de_chocolate)
-                        }
+                        com.example.cakebyteapp.util.ImageHelper.bindProductImage(binding.ivProduct, it.imageUrl)
 
                         // Lógica de botón añadir según stock
                         if (it.safeStock <= 1) {

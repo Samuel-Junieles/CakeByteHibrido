@@ -2,7 +2,9 @@ package com.example.cakebyteapp.presentation.vendor
 
 import android.os.Bundle
 import android.widget.ArrayAdapter
+import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -12,7 +14,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.example.cakebyteapp.R
 import com.example.cakebyteapp.databinding.ActivityAddEditProductBinding
 import com.example.cakebyteapp.presentation.admin.ProductsViewModel
-import com.example.cakebyteapp.presentation.auth.UserProfileActivity
+import com.example.cakebyteapp.util.ImageHelper
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -23,6 +25,29 @@ class AddEditProductActivity : AppCompatActivity() {
     private val viewModel: ProductsViewModel by viewModels()
     private var productId: Long = 0L
     private var selectedImageName: String = ""
+
+    private val takePictureLauncher = registerForActivityResult(
+        ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            selectedImageName = ImageHelper.bitmapToDataUrl(bitmap)
+            updatePreviewImage(selectedImageName)
+            Toast.makeText(this, "Foto tomada con la cámara", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val pickGalleryLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            val dataUrl = ImageHelper.uriToDataUrl(this, uri)
+            if (dataUrl != null) {
+                selectedImageName = dataUrl
+                updatePreviewImage(selectedImageName)
+                Toast.makeText(this, "Imagen seleccionada de la galería", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -117,30 +142,41 @@ class AddEditProductActivity : AppCompatActivity() {
     }
 
     private fun showImagePickerDialog() {
-        val images = arrayOf(
-            "Torta de Chocolate", "Torta de Vainilla", "Red Velvet", 
-            "Carrot Cake", "Cheesecake Mora", "Cheesecake Fresa", "Galletas"
+        val options = arrayOf(
+            "Tomar foto con la Cámara",
+            "Elegir de la Galería del Teléfono",
+            "Torta de Chocolate (Catálogo)",
+            "Torta de Vainilla (Catálogo)",
+            "Red Velvet (Catálogo)",
+            "Carrot Cake (Catálogo)",
+            "Cheesecake Mora (Catálogo)",
+            "Cheesecake Fresa (Catálogo)",
+            "Galletas (Catálogo)"
         )
-        val imageNames = arrayOf(
-            "torta_de_chocolate", "torta_de_vainilla", "red_velvet_torta", 
+        val presetNames = arrayOf(
+            "torta_de_chocolate", "torta_de_vainilla", "red_velvet_torta",
             "carrot_torta", "cheesecake_de_mora", "cheesecake_de_fresa", "galletas_de_chocolate"
         )
 
         AlertDialog.Builder(this)
-            .setTitle("Seleccionar Imagen")
-            .setItems(images) { _, which ->
-                selectedImageName = imageNames[which]
-                updatePreviewImage(selectedImageName)
+            .setTitle("Imagen del Producto")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> takePictureLauncher.launch(null)
+                    1 -> pickGalleryLauncher.launch("image/*")
+                    else -> {
+                        selectedImageName = presetNames[which - 2]
+                        updatePreviewImage(selectedImageName)
+                    }
+                }
             }
             .show()
     }
 
     private fun updatePreviewImage(name: String) {
         if (name.isEmpty()) return
-        val resId = resources.getIdentifier(name, "drawable", packageName)
-        if (resId != 0) {
-            binding.ivProductPreview.setImageResource(resId)
-            binding.ivProductPreview.scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
-        }
+        binding.ivProductPreview.imageTintList = null
+        binding.ivProductPreview.scaleType = ImageView.ScaleType.CENTER_CROP
+        ImageHelper.bindProductImage(binding.ivProductPreview, name)
     }
 }

@@ -2,7 +2,11 @@ package com.example.cakebyteapp.presentation.auth
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.ImageView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.cakebyteapp.AdminDashboardActivity
@@ -18,6 +22,7 @@ import com.example.cakebyteapp.presentation.buyer.BuyerHomeActivity
 import com.example.cakebyteapp.presentation.buyer.BuyerCatalogActivity
 import com.example.cakebyteapp.presentation.buyer.CartActivity
 import com.example.cakebyteapp.presentation.vendor.VendorProductsActivity
+import com.example.cakebyteapp.util.ImageHelper
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -28,9 +33,34 @@ class UserProfileActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityUserProfileBinding
     private val viewModel: AdminViewModel by viewModels()
-    
+    private var currentEmail: String = ""
+
     @Inject
     lateinit var authRepository: AuthRepository
+
+    private val takeAvatarCameraLauncher = registerForActivityResult(
+        ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null && currentEmail.isNotEmpty()) {
+            val dataUrl = ImageHelper.bitmapToDataUrl(bitmap)
+            ImageHelper.saveUserAvatar(this, currentEmail, dataUrl)
+            applyAvatar(dataUrl)
+            Toast.makeText(this, "Foto de perfil actualizada con la cámara", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val pickAvatarGalleryLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null && currentEmail.isNotEmpty()) {
+            val dataUrl = ImageHelper.uriToDataUrl(this, uri)
+            if (dataUrl != null) {
+                ImageHelper.saveUserAvatar(this, currentEmail, dataUrl)
+                applyAvatar(dataUrl)
+                Toast.makeText(this, "Foto de perfil actualizada desde la galería", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,14 +76,47 @@ class UserProfileActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val user = authRepository.getCurrentUser().first()
             user?.let {
+                currentEmail = it.email
                 binding.tvName.text = it.name
                 binding.tvEmail.text = it.email
+                ImageHelper.loadUserAvatar(this@UserProfileActivity, it.email)?.let { savedAvatar ->
+                    applyAvatar(savedAvatar)
+                }
                 setupBottomNavigation(it.role)
             }
         }
     }
 
+    private fun applyAvatar(dataUrl: String) {
+        binding.ivAvatar.scaleType = ImageView.ScaleType.CENTER_CROP
+        ImageHelper.bindProductImage(binding.ivAvatar, dataUrl, android.R.drawable.ic_menu_gallery)
+    }
+
+    private fun showAvatarPickerDialog() {
+        val options = arrayOf(
+            "Tomar foto con la Cámara",
+            "Elegir de la Galería del Teléfono"
+        )
+        AlertDialog.Builder(this)
+            .setTitle("Actualizar Foto de Perfil")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> takeAvatarCameraLauncher.launch(null)
+                    1 -> pickAvatarGalleryLauncher.launch("image/*")
+                }
+            }
+            .show()
+    }
+
     private fun setupListeners() {
+        binding.btnEditAvatar.setOnClickListener {
+            showAvatarPickerDialog()
+        }
+
+        binding.ivAvatar.setOnClickListener {
+            showAvatarPickerDialog()
+        }
+
         binding.btnEditProfile.setOnClickListener {
             startActivity(Intent(this, EditProfileActivity::class.java))
         }

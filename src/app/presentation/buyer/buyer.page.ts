@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 import { NavbarComponent } from '../shared/navbar.component';
 import { AuthRepository } from '../../data/services/auth.repository';
@@ -24,7 +24,234 @@ import {
     <ion-content [fullscreen]="true">
       <app-navbar [user]="currentUser"></app-navbar>
 
-      <main class="cb-container">
+      <div *ngIf="toastMessage" class="floating-toast">{{ toastMessage }}</div>
+
+      <!-- ============================================================== -->
+      <!-- VISTA MÓVIL ORIGINAL (<= 768px): Inicio, Catálogo, Carrito     -->
+      <!-- ============================================================== -->
+      <div class="mobile-buyer-flow">
+        <!-- 1. PANTALLA INICIO MÓVIL (activity_buyer_home.xml) -->
+        <div *ngIf="mobileTab === 'home'" class="m-home-screen">
+          <div class="m-welcome-container">
+            <h1 class="m-welcome-name">
+              Bienvenido {{ currentUser?.name || '' }} a CakeByte
+            </h1>
+          </div>
+
+          <h2 class="m-offers-title">Ofertas de hoy</h2>
+
+          <div class="m-offers-scroll">
+            <div
+              *ngFor="let p of products"
+              class="m-offer-card"
+              (click)="openProductDetail(p)"
+            >
+              <img [src]="getImage(p.imageurl)" [alt]="p.name" class="m-offer-img" />
+              <div class="m-offer-body">
+                <h4>{{ p.name }}</h4>
+                <span class="m-offer-price">{{ formatCOP(p.price) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="m-explore-card" (click)="mobileTab = 'catalog'">
+            <div class="m-explore-inner">
+              <div>
+                <h3>Explora nuestro catálogo completo</h3>
+                <p>Toca aquí para ver todo</p>
+              </div>
+              <span class="m-explore-arrow">+</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. PANTALLA CATÁLOGO MÓVIL (activity_buyer_catalog.xml) -->
+        <div *ngIf="mobileTab === 'catalog'" class="m-catalog-screen">
+          <h1 class="m-screen-title">Catálogo de productos</h1>
+
+          <div class="m-search-box">
+            <input
+              type="text"
+              class="m-search-input"
+              [(ngModel)]="searchQuery"
+              placeholder="¿Qué te apetece hoy?"
+            />
+          </div>
+
+          <div class="m-tabs-row">
+            <button
+              type="button"
+              *ngFor="let cat of mobileCategories"
+              class="m-tab-btn"
+              [class.active]="selectedCategory === cat"
+              (click)="selectedCategory = cat"
+            >
+              {{ cat }}
+            </button>
+          </div>
+
+          <div class="m-products-grid">
+            <div
+              *ngFor="let product of filteredProducts"
+              class="m-grid-card"
+              (click)="openProductDetail(product)"
+            >
+              <div class="m-grid-img-wrap">
+                <img [src]="getImage(product.imageurl)" [alt]="product.name" />
+                <span
+                  class="m-stock-badge"
+                  [class.in-stock]="product.stock > 1"
+                  [class.out-stock]="product.stock <= 1"
+                >
+                  {{ product.stock > 1 ? 'En stock' : 'Agotado' }}
+                </span>
+              </div>
+              <div class="m-grid-footer">
+                <div class="m-grid-meta">
+                  <h4>{{ product.name }}</h4>
+                  <span>{{ formatCOP(product.price) }}</span>
+                </div>
+                <button
+                  type="button"
+                  class="m-grid-action"
+                  (click)="$event.stopPropagation(); openProductDetail(product)"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. PANTALLA MI CARRITO MÓVIL (activity_cart.xml + checkout) -->
+        <div *ngIf="mobileTab === 'cart'" class="m-cart-screen">
+          <h1 class="m-screen-title">Mi Carrito</h1>
+
+          <div *ngIf="cartItems.length === 0" class="m-empty-cart">
+            <p>Tu carrito está vacío</p>
+            <button type="button" class="m-btn-primary-round" (click)="mobileTab = 'catalog'">
+              Ir al Catálogo
+            </button>
+          </div>
+
+          <div *ngIf="cartItems.length > 0 && !showMobileCheckout" class="m-cart-content">
+            <div class="m-cart-list">
+              <div *ngFor="let item of cartItems" class="m-cart-item">
+                <div class="m-cart-item-left">
+                  <h4>{{ item.productname }}</h4>
+                  <span class="m-cart-item-price">{{ formatCOP(item.productprice) }}</span>
+                </div>
+                <div class="m-qty-pill">
+                  <button type="button" (click)="changeItemQty(item, -1)">-</button>
+                  <span>{{ item.quantity }}</span>
+                  <button type="button" class="plus" (click)="changeItemQty(item, 1)">+</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="m-summary-card">
+              <span>Total</span>
+              <strong>{{ formatCOP(totalCartPrice) }}</strong>
+            </div>
+
+            <div class="m-cart-btn-group">
+              <button type="button" class="m-btn-cancel-round" (click)="clearCart()">
+                Cancelar
+              </button>
+              <button
+                type="button"
+                class="m-btn-pay-round"
+                (click)="showMobileCheckout = true"
+              >
+                Pagar ahora
+              </button>
+            </div>
+          </div>
+
+          <!-- Formulario de Checkout móvil -->
+          <div *ngIf="cartItems.length > 0 && showMobileCheckout" class="m-checkout-box">
+            <h2 class="m-sub-heading">Finalizar Compra</h2>
+
+            <label class="m-field-label">Dirección de entrega</label>
+            <input
+              type="text"
+              class="m-field-input"
+              [(ngModel)]="deliveryAddress"
+              placeholder="Ej. Calle 45 #12-34"
+            />
+
+            <label class="m-field-label">Método de pago</label>
+            <select class="m-field-input" [(ngModel)]="paymentMethod">
+              <option value="Tarjeta de Crédito / Débito">Tarjeta de Crédito / Débito</option>
+              <option value="Efectivo contra entrega">Efectivo contra entrega</option>
+              <option value="Transferencia bancaria">Transferencia bancaria</option>
+            </select>
+
+            <div class="m-summary-card mt-3">
+              <span>Total</span>
+              <strong>{{ formatCOP(totalCartPrice) }}</strong>
+            </div>
+
+            <div class="m-cart-btn-group">
+              <button
+                type="button"
+                class="m-btn-cancel-round"
+                (click)="showMobileCheckout = false"
+              >
+                Atrás
+              </button>
+              <button
+                type="button"
+                class="m-btn-pay-round"
+                [disabled]="processingOrder"
+                (click)="confirmOrder()"
+              >
+                {{ processingOrder ? 'Procesando...' : 'Confirmar Pedido' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTTOM NAVIGATION BAR ORIGINAL (buyer_bottom_menu.xml) -->
+        <nav class="m-bottom-nav">
+          <button
+            type="button"
+            class="m-nav-btn"
+            [class.active]="mobileTab === 'home'"
+            (click)="mobileTab = 'home'; activeTab = 'home'"
+          >
+            <ion-icon name="calendar-outline"></ion-icon>
+            <span>Inicio</span>
+          </button>
+          <button
+            type="button"
+            class="m-nav-btn"
+            [class.active]="mobileTab === 'catalog'"
+            (click)="mobileTab = 'catalog'; activeTab = 'home'"
+          >
+            <ion-icon name="book-outline"></ion-icon>
+            <span>Catálogo</span>
+          </button>
+          <button
+            type="button"
+            class="m-nav-btn"
+            [class.active]="mobileTab === 'cart'"
+            (click)="mobileTab = 'cart'; activeTab = 'cart'"
+          >
+            <ion-icon name="cart-outline"></ion-icon>
+            <span>Carrito</span>
+          </button>
+          <button type="button" class="m-nav-btn" (click)="goToProfile()">
+            <ion-icon name="person-outline"></ion-icon>
+            <span>Perfil</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- ============================================================== -->
+      <!-- VISTA ESCRITORIO WEB (> 768px)                                 -->
+      <!-- ============================================================== -->
+      <main class="cb-container desktop-buyer-flow">
         <!-- Hero Banner Web Responsive -->
         <section class="buyer-hero">
           <div class="hero-text">
@@ -59,8 +286,6 @@ import {
             class="hero-cake-img"
           />
         </section>
-
-        <div *ngIf="toastMessage" class="floating-toast">{{ toastMessage }}</div>
 
         <!-- VISTA CATÁLOGO -->
         <section *ngIf="activeTab === 'home'" class="catalog-section">
@@ -228,102 +453,490 @@ import {
             </button>
           </div>
         </section>
+      </main>
 
-        <!-- MODAL DETALLE DE PRODUCTO -->
-        <div class="modal-backdrop" *ngIf="selectedProduct" (click)="selectedProduct = null">
-          <div class="modal-card cb-card" (click)="$event.stopPropagation()">
-            <button type="button" class="modal-close" (click)="selectedProduct = null">✕</button>
-            <div class="detail-grid">
-              <img
-                [src]="getImage(selectedProduct.imageurl)"
-                [alt]="selectedProduct.name"
-                class="detail-img"
-              />
-              <div class="detail-info">
-                <span class="cb-badge cb-badge-role">{{ selectedProduct.category }}</span>
-                <h2>{{ selectedProduct.name }}</h2>
-                <h3 class="detail-price">{{ formatCOP(selectedProduct.price) }}</h3>
-                <p class="detail-desc">{{ selectedProduct.description }}</p>
-                <p class="allergens">
-                  <strong>Alérgenos:</strong> Gluten, lácteos, huevos. Stock disponible:
-                  <strong>{{ selectedProduct.stock }}</strong> unidades.
-                </p>
+      <!-- MODAL DETALLE DE PRODUCTO (compartido móvil y web) -->
+      <div class="modal-backdrop" *ngIf="selectedProduct" (click)="selectedProduct = null">
+        <div class="modal-card cb-card" (click)="$event.stopPropagation()">
+          <button type="button" class="modal-close" (click)="selectedProduct = null">X</button>
+          <div class="detail-grid">
+            <img
+              [src]="getImage(selectedProduct.imageurl)"
+              [alt]="selectedProduct.name"
+              class="detail-img"
+            />
+            <div class="detail-info">
+              <span class="cb-badge cb-badge-role">{{ selectedProduct.category }}</span>
+              <h2>{{ selectedProduct.name }}</h2>
+              <h3 class="detail-price">{{ formatCOP(selectedProduct.price) }}</h3>
+              <p class="detail-desc">{{ selectedProduct.description }}</p>
+              <p class="allergens">
+                <strong>Alérgenos:</strong> Gluten, lácteos, huevos. Stock disponible:
+                <strong>{{ selectedProduct.stock }}</strong> unidades.
+              </p>
 
-                <div class="form-group">
-                  <label>Tamaño de presentación</label>
-                  <select class="cb-select" [(ngModel)]="detailSize">
-                    <option value="Estándar">Estándar (8-10 porciones)</option>
-                    <option value="Mediano">Mediano (12-15 porciones)</option>
-                    <option value="Familiar">Familiar (20 porciones)</option>
-                  </select>
-                </div>
+              <div class="form-group">
+                <label>Tamaño de presentación</label>
+                <select class="cb-select" [(ngModel)]="detailSize">
+                  <option value="Estándar">Estándar (8-10 porciones)</option>
+                  <option value="Mediano">Mediano (12-15 porciones)</option>
+                  <option value="Familiar">Familiar (20 porciones)</option>
+                </select>
+              </div>
 
-                <div class="form-group">
-                  <label>Añade un mensaje en tu pastel (opcional)</label>
-                  <input
-                    type="text"
-                    class="cb-input"
-                    [(ngModel)]="detailNote"
-                    placeholder="Ej. ¡Feliz Cumpleaños María!"
-                  />
-                </div>
+              <div class="form-group">
+                <label>Añade un mensaje en tu pastel (opcional)</label>
+                <input
+                  type="text"
+                  class="cb-input"
+                  [(ngModel)]="detailNote"
+                  placeholder="Ej. Feliz Cumpleaños María"
+                />
+              </div>
 
-                <div class="detail-actions">
-                  <div class="qty-controls">
-                    <button type="button" (click)="detailQty = detailQty > 1 ? detailQty - 1 : 1">−</button>
-                    <span>{{ detailQty }}</span>
-                    <button
-                      type="button"
-                      (click)="detailQty = detailQty < selectedProduct.stock ? detailQty + 1 : detailQty"
-                    >
-                      +
-                    </button>
-                  </div>
-
+              <div class="detail-actions">
+                <div class="qty-controls">
+                  <button type="button" (click)="detailQty = detailQty > 1 ? detailQty - 1 : 1">−</button>
+                  <span>{{ detailQty }}</span>
                   <button
                     type="button"
-                    class="cb-btn-primary flex-1"
-                    [disabled]="selectedProduct.stock <= 1"
-                    (click)="addSelectedToCart()"
+                    (click)="detailQty = detailQty < selectedProduct.stock ? detailQty + 1 : detailQty"
                   >
-                    Añadir al carrito · {{ formatCOP(selectedProduct.price * detailQty) }}
+                    +
                   </button>
                 </div>
+
+                <button
+                  type="button"
+                  class="cb-btn-primary flex-1"
+                  [disabled]="selectedProduct.stock <= 1"
+                  (click)="addSelectedToCart()"
+                >
+                  Añadir al carrito · {{ formatCOP(selectedProduct.price * detailQty) }}
+                </button>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- MODAL RECIBO DE TRANSACCIÓN EXITOSA (PaymentSuccessActivity) -->
-        <div class="modal-backdrop" *ngIf="completedReceipt" (click)="completedReceipt = null">
-          <div class="receipt-card cb-card" (click)="$event.stopPropagation()">
-            <div class="receipt-badge">✓</div>
-            <h2>TRANSACCIÓN EXITOSA</h2>
-            <p class="receipt-sub">Tu pedido ha sido registrado correctamente</p>
+      <!-- MODAL RECIBO DE TRANSACCIÓN EXITOSA (PaymentSuccessActivity) -->
+      <div class="modal-backdrop" *ngIf="completedReceipt" (click)="completedReceipt = null">
+        <div class="receipt-card cb-card" (click)="$event.stopPropagation()">
+          <div class="receipt-badge">OK</div>
+          <h2>TRANSACCIÓN EXITOSA</h2>
+          <p class="receipt-sub">Tu pedido ha sido registrado correctamente</p>
 
-            <div class="receipt-rows">
-              <div class="r-row"><span>Estado de transacción</span><strong>APROBADA</strong></div>
-              <div class="r-row"><span>Nombre del comercio</span><strong>CakeByte Repostería</strong></div>
-              <div class="r-row"><span>Pedido #</span><strong>#{{ completedReceipt.id || 1001 }}</strong></div>
-              <div class="r-row"><span>Cliente</span><strong>{{ completedReceipt.customername }}</strong></div>
-              <div class="r-row"><span>CUS / Referencia</span><strong>CB-{{ transactionCus }}</strong></div>
-              <div class="r-row"><span>Concepto</span><strong>{{ completedReceipt.itemssummary }}</strong></div>
-              <div class="r-row total"><span>Total Pagado</span><strong>{{ formatCOP(completedReceipt.totalprice) }}</strong></div>
-            </div>
-
-            <button
-              type="button"
-              class="cb-btn-primary w-full"
-              (click)="completedReceipt = null; activeTab = 'home'"
-            >
-              REGRESAR AL INICIO
-            </button>
+          <div class="receipt-rows">
+            <div class="r-row"><span>Estado de transacción</span><strong>APROBADA</strong></div>
+            <div class="r-row"><span>Nombre del comercio</span><strong>CakeByte Repostería</strong></div>
+            <div class="r-row"><span>Pedido #</span><strong>#{{ completedReceipt.id || 1001 }}</strong></div>
+            <div class="r-row"><span>Cliente</span><strong>{{ completedReceipt.customername }}</strong></div>
+            <div class="r-row"><span>CUS / Referencia</span><strong>CB-{{ transactionCus }}</strong></div>
+            <div class="r-row"><span>Concepto</span><strong>{{ completedReceipt.itemssummary }}</strong></div>
+            <div class="r-row total"><span>Total Pagado</span><strong>{{ formatCOP(completedReceipt.totalprice) }}</strong></div>
           </div>
+
+          <button
+            type="button"
+            class="cb-btn-primary w-full"
+            (click)="completedReceipt = null; showMobileCheckout = false; mobileTab = 'home'; activeTab = 'home'"
+          >
+            REGRESAR AL INICIO
+          </button>
         </div>
-      </main>
+      </div>
     </ion-content>
   `,
   styles: [`
+    .mobile-buyer-flow {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .desktop-buyer-flow {
+        display: none !important;
+      }
+      .mobile-buyer-flow {
+        display: block;
+        min-height: 100vh;
+        background: #FFFFFF;
+        padding-bottom: 84px;
+      }
+
+      /* 1. INICIO MÓVIL (activity_buyer_home.xml) */
+      .m-home-screen {
+        padding-bottom: 24px;
+      }
+      .m-welcome-container {
+        padding: 48px 24px 0;
+      }
+      .m-welcome-name {
+        font-size: 20px;
+        font-weight: 700;
+        color: #FF8B6A;
+        margin: 0;
+      }
+      .m-offers-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #000000;
+        margin: 24px 24px 12px;
+      }
+      .m-offers-scroll {
+        display: flex;
+        gap: 14px;
+        overflow-x: auto;
+        padding: 4px 24px 16px;
+      }
+      .m-offer-card {
+        min-width: 170px;
+        max-width: 170px;
+        background: #FFFFFF;
+        border-radius: 20px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .m-offer-img {
+        width: 100%;
+        height: 130px;
+        object-fit: cover;
+      }
+      .m-offer-body {
+        padding: 10px 12px 14px;
+      }
+      .m-offer-body h4 {
+        margin: 0 0 4px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #000000;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .m-offer-price {
+        font-size: 13px;
+        font-weight: 700;
+        color: #FF8B6A;
+      }
+      .m-explore-card {
+        margin: 20px 24px;
+        background: #FFF1EB;
+        border-radius: 24px;
+        padding: 24px;
+        cursor: pointer;
+      }
+      .m-explore-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .m-explore-inner h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #FF8B6A;
+      }
+      .m-explore-inner p {
+        margin: 4px 0 0;
+        font-size: 14px;
+        color: #757575;
+      }
+      .m-explore-arrow {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: #FF8B6A;
+        color: #FFFFFF;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: 700;
+      }
+
+      /* 2. CATÁLOGO MÓVIL (activity_buyer_catalog.xml) */
+      .m-catalog-screen,
+      .m-cart-screen {
+        padding: 32px 0 24px;
+      }
+      .m-screen-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #000000;
+        margin: 0 24px 16px;
+      }
+      .m-search-box {
+        padding: 0 24px;
+      }
+      .m-search-input {
+        width: 100%;
+        padding: 12px 18px;
+        border: 1.5px solid #CCCCCC;
+        border-radius: 24px;
+        font-size: 14px;
+        color: #000000;
+        outline: none;
+      }
+      .m-tabs-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        border-bottom: 1px solid #EEEEEE;
+        margin-top: 12px;
+      }
+      .m-tab-btn {
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        padding: 12px 8px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #757575;
+      }
+      .m-tab-btn.active {
+        color: #FF8B6A;
+        border-bottom-color: #FF8B6A;
+      }
+      .m-products-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 14px 16px;
+      }
+      .m-grid-card {
+        background: #FFFFFF;
+        border-radius: 24px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        padding-bottom: 12px;
+      }
+      .m-grid-img-wrap {
+        position: relative;
+        height: 150px;
+      }
+      .m-grid-img-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .m-stock-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .m-stock-badge.in-stock {
+        background: #E8F5E9;
+        color: #2E7D32;
+      }
+      .m-stock-badge.out-stock {
+        background: #FFEBEE;
+        color: #C62828;
+      }
+      .m-grid-footer {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        padding: 8px 12px 0;
+        gap: 6px;
+      }
+      .m-grid-meta {
+        min-width: 0;
+      }
+      .m-grid-meta h4 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+        color: #000000;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .m-grid-meta span {
+        display: block;
+        margin-top: 2px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #FF8B6A;
+      }
+      .m-grid-action {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: none;
+        background: #FF8B6A;
+        color: #FFFFFF;
+        font-weight: 700;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+
+      /* 3. MI CARRITO MÓVIL (activity_cart.xml + item_cart.xml) */
+      .m-empty-cart {
+        text-align: center;
+        padding: 48px 24px;
+        color: #757575;
+      }
+      .m-btn-primary-round {
+        background: #FF8B6A;
+        color: #FFFFFF;
+        border: none;
+        border-radius: 24px;
+        padding: 14px 28px;
+        font-weight: 700;
+        margin-top: 12px;
+      }
+      .m-cart-list {
+        padding: 0 24px;
+      }
+      .m-cart-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 0;
+        border-bottom: 1px solid #EEEEEE;
+      }
+      .m-cart-item-left h4 {
+        margin: 0 0 4px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #000000;
+      }
+      .m-cart-item-price {
+        font-size: 14px;
+        color: #FF8B6A;
+        font-weight: 600;
+      }
+      .m-qty-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        background: #FFF1EB;
+        padding: 6px 14px;
+        border-radius: 999px;
+      }
+      .m-qty-pill button {
+        background: none;
+        border: none;
+        font-size: 18px;
+        font-weight: 700;
+        color: #000000;
+      }
+      .m-qty-pill button.plus {
+        color: #FF8B6A;
+      }
+      .m-qty-pill span {
+        font-size: 16px;
+        font-weight: 700;
+        color: #000000;
+      }
+      .m-summary-card {
+        margin: 24px 24px 16px;
+        padding: 16px 20px;
+        border: 1px solid #EEEEEE;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .m-summary-card span {
+        font-size: 20px;
+        font-weight: 700;
+        color: #000000;
+      }
+      .m-summary-card strong {
+        font-size: 20px;
+        font-weight: 700;
+        color: #FF8B6A;
+      }
+      .m-cart-btn-group {
+        display: flex;
+        gap: 12px;
+        padding: 0 24px;
+      }
+      .m-btn-cancel-round {
+        flex: 1;
+        padding: 14px;
+        border-radius: 24px;
+        border: 1px solid #EEEEEE;
+        background: #FFFFFF;
+        color: #757575;
+        font-weight: 600;
+        font-size: 15px;
+      }
+      .m-btn-pay-round {
+        flex: 1.5;
+        padding: 14px;
+        border-radius: 24px;
+        border: none;
+        background: #FF8B6A;
+        color: #FFFFFF;
+        font-weight: 700;
+        font-size: 16px;
+      }
+      .m-checkout-box {
+        padding: 0 24px;
+      }
+      .m-sub-heading {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 8px 0 16px;
+      }
+      .m-field-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 700;
+        margin: 12px 0 6px;
+      }
+      .m-field-input {
+        width: 100%;
+        padding: 13px 16px;
+        border: 1.5px solid #CCCCCC;
+        border-radius: 12px;
+        font-size: 15px;
+      }
+
+      /* BARRA DE NAVEGACIÓN INFERIOR (BottomNavigationView) */
+      .m-bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: #FFFFFF;
+        border-top: 1px solid #EEEEEE;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        z-index: 150;
+      }
+      .m-nav-btn {
+        background: none;
+        border: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        color: #9E9E9E;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .m-nav-btn ion-icon {
+        font-size: 20px;
+      }
+      .m-nav-btn.active {
+        color: #FF8B6A;
+      }
+    }
+
+    /* ============================================================ */
+    /* ESTILOS DE ESCRITORIO (> 768px)                              */
+    /* ============================================================ */
     .buyer-hero {
       background: linear-gradient(135deg, #FFF0EB 0%, #FFE0D4 100%);
       border-radius: 28px;
@@ -584,6 +1197,9 @@ import {
     .mb-2 {
       margin-bottom: 10px;
     }
+    .mt-3 {
+      margin-top: 16px;
+    }
     .order-totals {
       margin: 20px 0;
       padding: 16px;
@@ -691,7 +1307,7 @@ import {
       border-radius: 50%;
       background: #c8e6c9;
       color: #2e7d32;
-      font-size: 2rem;
+      font-size: 1.2rem;
       font-weight: 800;
       display: flex;
       align-items: center;
@@ -721,7 +1337,7 @@ import {
     }
     .floating-toast {
       position: fixed;
-      bottom: 24px;
+      bottom: 76px;
       right: 24px;
       background: #231917;
       color: #fff;
@@ -732,16 +1348,11 @@ import {
       box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
     }
     @media (max-width: 860px) {
-      .buyer-hero {
-        flex-direction: column;
-        text-align: center;
-        padding: 24px;
-      }
-      .hero-actions {
-        justify-content: center;
-      }
-      .checkout-grid, .detail-grid {
+      .detail-grid {
         grid-template-columns: 1fr;
+      }
+      .detail-img {
+        height: 200px;
       }
     }
   `],
@@ -751,6 +1362,12 @@ export class BuyerPage implements OnInit {
   products: ProductEntity[] = [];
   cartItems: CartItemEntity[] = [];
 
+  /* Estado móvil original */
+  mobileTab: 'home' | 'catalog' | 'cart' = 'home';
+  mobileCategories = ['Todos', 'Pasteles', 'Galletas'];
+  showMobileCheckout = false;
+
+  /* Estado escritorio */
   activeTab: 'home' | 'cart' = 'home';
   categories = ['Todos', 'Pasteles', 'Galletas', 'Pan', 'Bebidas'];
   selectedCategory = 'Todos';
@@ -774,7 +1391,8 @@ export class BuyerPage implements OnInit {
     private productRepo: ProductRepository,
     private cartRepo: CartRepository,
     private orderRepo: OrderRepository,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -791,13 +1409,21 @@ export class BuyerPage implements OnInit {
     this.route.queryParams.subscribe((params) => {
       if (params['tab'] === 'cart') {
         this.activeTab = 'cart';
+        this.mobileTab = 'cart';
+      } else if (params['tab'] === 'catalog') {
+        this.mobileTab = 'catalog';
       } else if (params['tab'] === 'home') {
         this.activeTab = 'home';
+        this.mobileTab = 'home';
       }
     });
 
     this.productRepo.loadAllProducts();
     this.cartRepo.loadCartItems();
+  }
+
+  goToProfile(): void {
+    this.router.navigate(['/profile']);
   }
 
   get filteredProducts(): ProductEntity[] {
@@ -860,7 +1486,10 @@ export class BuyerPage implements OnInit {
 
   async changeItemQty(item: CartItemEntity, delta: number): Promise<void> {
     const nextQty = item.quantity + delta;
-    if (nextQty < 1) return;
+    if (nextQty < 1) {
+      await this.removeItem(item);
+      return;
+    }
     await this.cartRepo.updateQuantity(item, nextQty);
   }
 
@@ -902,4 +1531,3 @@ export class BuyerPage implements OnInit {
     }, 3200);
   }
 }
-

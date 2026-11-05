@@ -216,11 +216,8 @@ import { UserEntity } from '../../domain/models/models';
       background: #ffcdd2;
     }
     @media (max-width: 768px) {
-      .cb-navbar-inner {
-        padding: 10px 16px;
-      }
-      .cb-user-meta {
-        display: none;
+      .cb-navbar {
+        display: none !important;
       }
     }
   `],
