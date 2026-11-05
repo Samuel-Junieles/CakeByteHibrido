@@ -75,7 +75,7 @@ La aplicación se fundamenta en los principios de **Clean Architecture** y el pa
 * *Estudiante de Ingeniería de Software - 7mo Semestre*
 
 **Kevin Rojas**
-* *Estudiante de Ingeniería de Software - 6to Semestre*
+* *Estudiante de Ingeniería de Software - 7to Semestre*
 
 ---
 Desarrollador enfocado en arquitecturas limpias, y soluciones escalables en la nube.
