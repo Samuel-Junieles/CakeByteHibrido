@@ -15,7 +15,40 @@ export class OrderRepository {
   constructor(
     private productRepository: ProductRepository,
     private cartRepository: CartRepository
-  ) {}
+  ) {
+    this.setupRealtimeAndFocusSync();
+  }
+
+  private setupRealtimeAndFocusSync(): void {
+    try {
+      supabaseClient
+        .channel('cakebyte-orders-realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'orders' },
+          () => {
+            this.loadAllOrders();
+          }
+        )
+        .subscribe();
+    } catch {
+      // Ignorar si Realtime no está disponible temporalmente
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', () => this.loadAllOrders());
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          this.loadAllOrders();
+        }
+      });
+      setInterval(() => {
+        if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+          this.loadAllOrders();
+        }
+      }, 8000);
+    }
+  }
 
   async loadAllOrders(): Promise<OrderEntity[]> {
     const { data, error } = await supabaseClient

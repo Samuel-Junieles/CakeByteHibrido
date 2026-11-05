@@ -13,7 +13,7 @@ import { UserEntity } from '../../domain/models/models';
   standalone: true,
   imports: [CommonModule, FormsModule, IonicModule, NavbarComponent],
   template: `
-    <ion-content [fullscreen]="true">
+    <ion-content>
       <app-navbar [user]="currentUser"></app-navbar>
 
       <div *ngIf="toastMessage" class="floating-toast">{{ toastMessage }}</div>
@@ -746,6 +746,7 @@ export class ProfilePage implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.authRepo.refreshCurrentUserFromCloud();
     this.authRepo.currentUser$.subscribe((u) => {
       this.currentUser = u;
       if (u) {

@@ -19,3 +19,13 @@ node_modules/
 www/
 .angular/
 dist/
+.vscode/
+
+# Seguridad: no exponer scripts de BD ni archivos de credenciales
+*.sql
+supabase_schema.sql
+.env
+.env.*
+google-services.json
+
+android/.idea/

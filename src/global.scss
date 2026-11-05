@@ -28,6 +28,16 @@ html, body {
   font-family: var(--ion-font-family);
 }
 
+ion-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  contain: strict;
+  fill: currentColor;
+  box-sizing: content-box !important;
+  flex-shrink: 0;
+}
+
 /* Diseño Web Real Responsive (sin emulación de marco de teléfono) */
 .cb-container {
   width: 100%;
@@ -149,3 +159,488 @@ html, body {
   color: #D84315;
 }
 
+ion-content {
+  --overflow: auto;
+  --background: #FFFFFF;
+}
+
+/* ===================================================================== */
+/* AJUSTE GLOBAL DE MÁRGENES, BOTTOM NAV Y SAFE AREA EN TELÉFONO         */
+/* ===================================================================== */
+@media (max-width: 768px) {
+  .ion-page {
+    background: #FFFFFF;
+    padding-top: max(env(safe-area-inset-top, 0px), 8px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Si corre como APK nativa sin que WindowInsets haya desplazado el WebView aún */
+  html.plt-native-app:not(.native-insets-applied) .ion-page {
+    padding-top: 36px;
+    padding-bottom: 14px;
+  }
+
+  .mobile-admin-flow,
+  .mobile-vendor-flow,
+  .mobile-buyer-flow,
+  .mobile-profile-flow,
+  .mobile-auth-flow {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  .mobile-admin-flow,
+  .mobile-vendor-flow,
+  .mobile-buyer-flow,
+  .mobile-profile-flow {
+    padding-bottom: 165px !important;
+  }
+
+  /* Encabezados fijos/sticky en todas las pantallas móviles para respetar margen superior */
+  .m-welcome-container {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: #FFFFFF;
+    padding: 18px 24px 12px !important;
+    margin: 0 !important;
+  }
+
+  .m-admin-users,
+  .m-admin-products,
+  .m-vendor-products,
+  .m-catalog-screen,
+  .m-cart-screen {
+    padding-top: 0 !important;
+  }
+
+  .m-screen-title {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: #FFFFFF;
+    padding: 18px 24px 12px !important;
+    margin: 0 !important;
+  }
+
+  .m-edit-profile-screen {
+    padding-top: 16px !important;
+  }
+
+  .m-edit-top {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: #FFFFFF;
+    padding: 8px 0 12px;
+    margin-bottom: 16px !important;
+  }
+
+  /* =================================================================== */
+  /* BARRA DE NAVEGACIÓN INFERIOR MÁS GRANDE Y CON ESPACIO DE ACCESO     */
+  /* =================================================================== */
+  .m-bottom-nav {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    height: auto !important;
+    min-height: 92px !important;
+    padding: 10px 12px calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+    background: #FFFFFF !important;
+    border-top: 1px solid #F0E6E2 !important;
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    box-shadow: 0 -8px 28px rgba(35, 25, 23, 0.08) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+    gap: 6px;
+    z-index: 200 !important;
+  }
+
+  .m-nav-btn {
+    flex: 1;
+    min-height: 60px !important;
+    padding: 8px 6px !important;
+    border-radius: 16px;
+    border: none;
+    background: transparent;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    color: #7D6E68 !important;
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    line-height: 1.15 !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .m-nav-btn ion-icon {
+    display: block !important;
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 26px !important;
+    margin: 0 !important;
+    flex-shrink: 0;
+  }
+
+  .m-nav-btn span {
+    display: block;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+
+  .m-nav-btn.active {
+    background: #FFF1EB !important;
+    color: #FF8B6A !important;
+    box-shadow: 0 4px 12px rgba(255, 139, 106, 0.16);
+  }
+
+  .m-nav-btn:active {
+    transform: scale(0.96);
+  }
+
+  .m-fab {
+    bottom: 114px !important;
+  }
+}
+
+/* ===================================================================== */
+/* CARRUSEL DE OFERTAS DE HOY (activity_buyer_home.xml)                  */
+/* ===================================================================== */
+@media (max-width: 768px) {
+  .m-welcome-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .m-welcome-title-black {
+    font-size: 22px;
+    font-weight: 700;
+    color: #000000;
+    margin: 0;
+    line-height: 1.25;
+    flex: 1;
+  }
+
+  .m-welcome-search-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    border: none;
+    background: #FFF1EB;
+    color: #FF8B6A;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .m-offers-heading {
+    font-size: 20px;
+    font-weight: 700;
+    color: #000000;
+    margin: 20px 24px 14px;
+  }
+
+  .m-promo-scroll {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding: 4px 24px 12px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .m-promo-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .m-promo-banner {
+    position: relative;
+    width: 300px;
+    min-width: 300px;
+    height: 180px;
+    border-radius: 24px;
+    overflow: hidden;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  }
+
+  .m-promo-bg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .m-promo-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.14) 0%, rgba(0, 0, 0, 0.46) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 24px;
+  }
+
+  .m-promo-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #FFFFFF;
+    margin: 0 0 4px;
+    line-height: 1.15;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  }
+
+  .m-promo-sub {
+    font-size: 16px;
+    font-weight: 500;
+    color: #FFFFFF;
+    margin: 0;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  }
+
+  .m-explore-salmon-card {
+    margin: 22px 24px;
+    background: #FF8B6A;
+    border-radius: 24px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: 0 6px 18px rgba(255, 139, 106, 0.32);
+    cursor: pointer;
+  }
+
+  .m-explore-salmon-card h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #FFFFFF;
+    line-height: 1.25;
+  }
+
+  .m-explore-salmon-card ion-icon {
+    font-size: 28px;
+    color: #FFFFFF;
+    flex-shrink: 0;
+  }
+
+  /* =================================================================== */
+  /* TARJETAS KPI REDISEÑADAS (Ventas del día, Pedidos, Ganancias)       */
+  /* =================================================================== */
+  .m-stats-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 18px !important;
+    padding: 12px 24px 28px !important;
+  }
+
+  .m-stat-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 24px !important;
+    padding: 20px 22px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between;
+    gap: 14px;
+    min-height: 138px !important;
+    box-shadow: 0 10px 24px rgba(35, 25, 23, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.85);
+  }
+
+  .m-stat-card::after {
+    content: '';
+    position: absolute;
+    right: -24px;
+    bottom: -28px;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    opacity: 0.22;
+    pointer-events: none;
+  }
+
+  .m-stat-card.sales {
+    background: linear-gradient(135deg, #FFFDF2 0%, #FFF3C4 100%) !important;
+    border-color: #FDE68A !important;
+  }
+  .m-stat-card.sales::after {
+    background: #F59E0B;
+  }
+
+  .m-stat-card.orders {
+    background: linear-gradient(135deg, #F3FAF4 0%, #DCFCE7 100%) !important;
+    border-color: #BBF7D0 !important;
+  }
+  .m-stat-card.orders::after {
+    background: #22C55E;
+  }
+
+  .m-stat-card.earnings {
+    background: linear-gradient(135deg, #FFF5F7 0%, #FFE4E9 100%) !important;
+    border-color: #FECDD3 !important;
+  }
+  .m-stat-card.earnings::after {
+    background: #F43F5E;
+  }
+
+  .m-stat-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+  }
+
+  .m-stat-head {
+    display: flex !important;
+    align-items: center !important;
+    gap: 14px !important;
+    margin-bottom: 0 !important;
+  }
+
+  .m-stat-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .m-stat-icon-box ion-icon {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 24px !important;
+  }
+
+  .m-stat-card.sales .m-stat-icon-box {
+    background: #FEF3C7;
+    color: #D97706;
+  }
+
+  .m-stat-card.orders .m-stat-icon-box {
+    background: #D1FAE5;
+    color: #16A34A;
+  }
+
+  .m-stat-card.earnings .m-stat-icon-box {
+    background: #FFE4E6;
+    color: #E11D48;
+  }
+
+  .m-stat-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .m-stat-title {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #1F1614 !important;
+    line-height: 1.2;
+  }
+
+  .m-stat-sub {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #6E5D57;
+  }
+
+  .m-stat-pill {
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+  }
+
+  .m-stat-card.sales .m-stat-pill {
+    background: rgba(217, 119, 6, 0.14);
+    color: #B45309;
+  }
+
+  .m-stat-card.orders .m-stat-pill {
+    background: rgba(22, 163, 74, 0.14);
+    color: #15803D;
+  }
+
+  .m-stat-card.earnings .m-stat-pill {
+    background: rgba(225, 29, 72, 0.14);
+    color: #BE123C;
+  }
+
+  .m-stat-bottom {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .m-stat-value {
+    font-size: 32px !important;
+    font-weight: 900 !important;
+    color: #18110F !important;
+    letter-spacing: -0.02em;
+    line-height: 1.05 !important;
+  }
+
+  .m-stat-bar {
+    width: 100%;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+  }
+
+  .m-stat-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+  }
+
+  .m-stat-card.sales .m-stat-bar-fill {
+    width: 72%;
+    background: linear-gradient(90deg, #F59E0B, #FBBF24);
+  }
+
+  .m-stat-card.orders .m-stat-bar-fill {
+    width: 64%;
+    background: linear-gradient(90deg, #16A34A, #4ADE80);
+  }
+
+  .m-stat-card.earnings .m-stat-bar-fill {
+    width: 86%;
+    background: linear-gradient(90deg, #E11D48, #FB7185);
+  }
+}

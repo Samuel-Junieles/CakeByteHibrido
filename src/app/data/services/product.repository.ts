@@ -10,25 +10,63 @@ export class ProductRepository {
   private productsSubject = new BehaviorSubject<ProductEntity[]>([]);
   public products$: Observable<ProductEntity[]> = this.productsSubject.asObservable();
 
+  constructor() {
+    this.setupRealtimeAndFocusSync();
+  }
+
+  private setupRealtimeAndFocusSync(): void {
+    try {
+      supabaseClient
+        .channel('cakebyte-products-realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'products' },
+          () => {
+            this.loadAllProducts();
+          }
+        )
+        .subscribe();
+    } catch {
+      // Ignorar si Realtime no está disponible temporalmente
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', () => this.loadAllProducts());
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          this.loadAllProducts();
+        }
+      });
+      setInterval(() => {
+        if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+          this.loadAllProducts();
+        }
+      }, 8000);
+    }
+  }
+
   async loadAllProducts(): Promise<ProductEntity[]> {
     const { data, error } = await supabaseClient
       .from('products')
       .select('*')
+      .neq('category', '__user_profile__')
       .order('id', { ascending: true });
 
     if (error || !data) {
       return this.productsSubject.value;
     }
 
-    const list = (data as ProductEntity[]).map((p) => ({
-      ...p,
-      name: p.name || 'Producto',
-      description: p.description || '',
-      category: p.category || 'Pasteles',
-      price: Number(p.price ?? 0),
-      stock: Number(p.stock ?? 0),
-      status: p.status || 'Activo',
-    }));
+    const list = (data as ProductEntity[])
+      .filter((p) => p.category !== '__user_profile__')
+      .map((p) => ({
+        ...p,
+        name: p.name || 'Producto',
+        description: p.description || '',
+        category: p.category || 'Pasteles',
+        price: Number(p.price ?? 0),
+        stock: Number(p.stock ?? 0),
+        status: p.status || 'Activo',
+      }));
 
     this.productsSubject.next(list);
     return list;
@@ -82,4 +120,3 @@ export class ProductRepository {
     return false;
   }
 }
-

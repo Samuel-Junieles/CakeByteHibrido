@@ -22,7 +22,7 @@ import {
   standalone: true,
   imports: [CommonModule, FormsModule, IonicModule, NavbarComponent, PhotoPickerComponent],
   template: `
-    <ion-content [fullscreen]="true">
+    <ion-content>
       <app-navbar [user]="currentUser"></app-navbar>
 
       <div *ngIf="toastMessage" class="floating-toast">{{ toastMessage }}</div>
@@ -31,37 +31,106 @@ import {
       <!-- VISTA MÓVIL ORIGINAL (<= 768px): Inicio, Usuarios, Productos   -->
       <!-- ============================================================== -->
       <div class="mobile-admin-flow">
-        <!-- 1. INICIO ADMIN MÓVIL (activity_admin_dashboard.xml) -->
+        <!-- 1. INICIO ADMIN MÓVIL (activity_admin_dashboard.xml + Carrusel Ofertas de hoy) -->
         <div *ngIf="activeSection === 'dashboard'" class="m-admin-dashboard">
-          <div class="m-welcome-container">
-            <h1 class="m-welcome-name">
+          <div class="m-welcome-container m-welcome-row">
+            <h1 class="m-welcome-title-black">
               Bienvenido {{ currentUser?.name || '' }} a CakeByte
             </h1>
+            <button
+              type="button"
+              class="m-welcome-search-btn"
+              (click)="activeSection = 'products'"
+              title="Buscar productos"
+            >
+              <ion-icon name="search-outline"></ion-icon>
+            </button>
+          </div>
+
+          <h2 class="m-offers-heading">Ofertas de hoy</h2>
+
+          <div class="m-promo-scroll">
+            <div class="m-promo-banner" (click)="selectedAdminCategory = 'Galletas'; activeSection = 'products'">
+              <img src="assets/images/onboarding_1.png" alt="20% OFF" class="m-promo-bg" />
+              <div class="m-promo-overlay">
+                <h3 class="m-promo-title">20% OFF</h3>
+                <p class="m-promo-sub">En todas las Galletas</p>
+              </div>
+            </div>
+
+            <div class="m-promo-banner" (click)="selectedAdminCategory = 'Pasteles'; activeSection = 'products'">
+              <img src="assets/images/torta_de_chocolate.png" alt="Combo Especial" class="m-promo-bg" />
+              <div class="m-promo-overlay">
+                <h3 class="m-promo-title">Combo Especial</h3>
+                <p class="m-promo-sub">Pastel + 2 Cafés</p>
+              </div>
+            </div>
+
+            <div class="m-promo-banner" (click)="activeSection = 'products'">
+              <img src="assets/images/cheesecake_de_fresa.png" alt="2x1 en Postres" class="m-promo-bg" />
+              <div class="m-promo-overlay">
+                <h3 class="m-promo-title">2x1 en Postres</h3>
+                <p class="m-promo-sub">Solo por hoy en CakeByte</p>
+              </div>
+            </div>
           </div>
 
           <div class="m-stats-stack">
             <div class="m-stat-card sales">
-              <div class="m-stat-head">
-                <ion-icon name="calendar-outline" class="icon-sales"></ion-icon>
-                <span>Ventas del día</span>
+              <div class="m-stat-top">
+                <div class="m-stat-head">
+                  <div class="m-stat-icon-box">
+                    <ion-icon name="calendar-outline"></ion-icon>
+                  </div>
+                  <div class="m-stat-titles">
+                    <span class="m-stat-title">Ventas del día</span>
+                    <small class="m-stat-sub">Órdenes registradas hoy</small>
+                  </div>
+                </div>
+                <span class="m-stat-pill">Hoy</span>
               </div>
-              <strong class="m-stat-value">{{ stats.dailySalesCount }}</strong>
+              <div class="m-stat-bottom">
+                <strong class="m-stat-value">{{ stats.dailySalesCount }}</strong>
+              </div>
+              <div class="m-stat-bar"><span class="m-stat-bar-fill"></span></div>
             </div>
 
             <div class="m-stat-card orders">
-              <div class="m-stat-head">
-                <ion-icon name="add-circle-outline" class="icon-orders"></ion-icon>
-                <span>Pedidos</span>
+              <div class="m-stat-top">
+                <div class="m-stat-head">
+                  <div class="m-stat-icon-box">
+                    <ion-icon name="bag-check-outline"></ion-icon>
+                  </div>
+                  <div class="m-stat-titles">
+                    <span class="m-stat-title">Pedidos</span>
+                    <small class="m-stat-sub">Total en plataforma</small>
+                  </div>
+                </div>
+                <span class="m-stat-pill">En vivo</span>
               </div>
-              <strong class="m-stat-value">{{ stats.totalOrders }}</strong>
+              <div class="m-stat-bottom">
+                <strong class="m-stat-value">{{ stats.totalOrders }}</strong>
+              </div>
+              <div class="m-stat-bar"><span class="m-stat-bar-fill"></span></div>
             </div>
 
             <div class="m-stat-card earnings">
-              <div class="m-stat-head">
-                <ion-icon name="paper-plane-outline" class="icon-earnings"></ion-icon>
-                <span>Ganancias totales</span>
+              <div class="m-stat-top">
+                <div class="m-stat-head">
+                  <div class="m-stat-icon-box">
+                    <ion-icon name="wallet-outline"></ion-icon>
+                  </div>
+                  <div class="m-stat-titles">
+                    <span class="m-stat-title">Ganancias totales</span>
+                    <small class="m-stat-sub">Ingresos acumulados</small>
+                  </div>
+                </div>
+                <span class="m-stat-pill">COP</span>
               </div>
-              <strong class="m-stat-value">{{ formatCOP(stats.totalEarnings) }}</strong>
+              <div class="m-stat-bottom">
+                <strong class="m-stat-value">{{ formatCOP(stats.totalEarnings) }}</strong>
+              </div>
+              <div class="m-stat-bar"><span class="m-stat-bar-fill"></span></div>
             </div>
           </div>
         </div>
@@ -265,7 +334,7 @@ import {
         <section class="kpi-grid">
           <div class="kpi-card kpi-sales">
             <span class="kpi-title">Ventas del día</span>
-            <strong>{{ stats.dailySalesCount }} uds</strong>
+            <strong>{{ stats.dailySalesCount }}</strong>
             <small class="kpi-trend">{{ stats.activeProductsCount }} productos activos</small>
           </div>
           <div class="kpi-card kpi-orders">
@@ -1360,6 +1429,9 @@ export class AdminPage implements OnInit {
 
   async ngOnInit(): Promise<void> {
     this.authRepo.currentUser$.subscribe((u) => (this.currentUser = u));
+    this.authRepo.users$.subscribe((list) => {
+      if (list.length > 0) this.users = list;
+    });
     this.productRepo.products$.subscribe((p) => (this.products = p));
     this.orderRepo.orders$.subscribe((o) => (this.orders = o));
 

@@ -21,7 +21,7 @@ import {
   standalone: true,
   imports: [CommonModule, FormsModule, IonicModule, NavbarComponent],
   template: `
-    <ion-content [fullscreen]="true">
+    <ion-content>
       <app-navbar [user]="currentUser"></app-navbar>
 
       <div *ngIf="toastMessage" class="floating-toast">{{ toastMessage }}</div>
@@ -32,36 +32,51 @@ import {
       <div class="mobile-buyer-flow">
         <!-- 1. PANTALLA INICIO MÓVIL (activity_buyer_home.xml) -->
         <div *ngIf="mobileTab === 'home'" class="m-home-screen">
-          <div class="m-welcome-container">
-            <h1 class="m-welcome-name">
+          <div class="m-welcome-container m-welcome-row">
+            <h1 class="m-welcome-title-black">
               Bienvenido {{ currentUser?.name || '' }} a CakeByte
             </h1>
-          </div>
-
-          <h2 class="m-offers-title">Ofertas de hoy</h2>
-
-          <div class="m-offers-scroll">
-            <div
-              *ngFor="let p of products"
-              class="m-offer-card"
-              (click)="openProductDetail(p)"
+            <button
+              type="button"
+              class="m-welcome-search-btn"
+              (click)="mobileTab = 'catalog'"
+              title="Buscar en catálogo"
             >
-              <img [src]="getImage(p.imageurl)" [alt]="p.name" class="m-offer-img" />
-              <div class="m-offer-body">
-                <h4>{{ p.name }}</h4>
-                <span class="m-offer-price">{{ formatCOP(p.price) }}</span>
+              <ion-icon name="search-outline"></ion-icon>
+            </button>
+          </div>
+
+          <h2 class="m-offers-heading">Ofertas de hoy</h2>
+
+          <div class="m-promo-scroll">
+            <div class="m-promo-banner" (click)="selectedCategory = 'Galletas'; mobileTab = 'catalog'">
+              <img src="assets/images/onboarding_1.png" alt="20% OFF" class="m-promo-bg" />
+              <div class="m-promo-overlay">
+                <h3 class="m-promo-title">20% OFF</h3>
+                <p class="m-promo-sub">En todas las Galletas</p>
+              </div>
+            </div>
+
+            <div class="m-promo-banner" (click)="selectedCategory = 'Pasteles'; mobileTab = 'catalog'">
+              <img src="assets/images/torta_de_chocolate.png" alt="Combo Especial" class="m-promo-bg" />
+              <div class="m-promo-overlay">
+                <h3 class="m-promo-title">Combo Especial</h3>
+                <p class="m-promo-sub">Pastel + 2 Cafés</p>
+              </div>
+            </div>
+
+            <div class="m-promo-banner" (click)="mobileTab = 'catalog'">
+              <img src="assets/images/cheesecake_de_fresa.png" alt="2x1 en Postres" class="m-promo-bg" />
+              <div class="m-promo-overlay">
+                <h3 class="m-promo-title">2x1 en Postres</h3>
+                <p class="m-promo-sub">Solo por hoy en CakeByte</p>
               </div>
             </div>
           </div>
 
-          <div class="m-explore-card" (click)="mobileTab = 'catalog'">
-            <div class="m-explore-inner">
-              <div>
-                <h3>Explora nuestro catálogo completo</h3>
-                <p>Toca aquí para ver todo</p>
-              </div>
-              <span class="m-explore-arrow">+</span>
-            </div>
+          <div class="m-explore-salmon-card" (click)="mobileTab = 'catalog'">
+            <h3>Explora nuestro catálogo completo</h3>
+            <ion-icon name="caret-forward-outline"></ion-icon>
           </div>
         </div>
 

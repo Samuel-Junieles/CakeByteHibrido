@@ -5,14 +5,18 @@ const config: CapacitorConfig = {
   appName: 'CakeByte',
   webDir: 'www',
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
   },
   plugins: {
     Camera: {
-      presentationStyle: 'fullscreen'
-    }
-  }
+      presentationStyle: 'fullscreen',
+    },
+    StatusBar: {
+      overlaysWebView: false,
+      style: 'LIGHT',
+      backgroundColor: '#FFFFFF',
+    },
+  },
 };
 
 export default config;
-

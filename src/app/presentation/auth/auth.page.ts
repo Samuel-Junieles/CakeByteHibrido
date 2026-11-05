@@ -1,7 +1,8 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, HostListener, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { IonicModule } from '@ionic/angular';
 import { AuthRepository } from '../../data/services/auth.repository';
 import { UserRole } from '../../domain/models/models';
@@ -11,9 +12,10 @@ import { UserRole } from '../../domain/models/models';
   standalone: true,
   imports: [CommonModule, FormsModule, IonicModule],
   template: `
-    <ion-content [fullscreen]="true">
+    <ion-content [scrollY]="!isMobileViewport" class="auth-ion-content">
       <!-- ============================================================== -->
       <!-- VISTA MÓVIL ORIGINAL (<= 768px): Splash -> Onboarding -> Login -->
+      <!-- Sin scroll vertical: todo cabe exactamente en la pantalla      -->
       <!-- ============================================================== -->
       <div class="mobile-auth-flow">
         <!-- 1. SPLASH SCREEN (activity_main.xml) -->
@@ -27,7 +29,7 @@ import { UserRole } from '../../domain/models/models';
         <!-- 2. ONBOARDING INTERACTIVO CON TOQUE EN LA PANTALLA (activity_onboarding.xml + item_onboarding.xml) -->
         <div *ngIf="mobileStep === 'onboarding'" class="m-onboarding">
           <div class="m-onboarding-slide">
-            <!-- Imagen ocupa el 65% superior (scaleType="centerCrop") -->
+            <!-- Imagen ocupa el 60% superior (scaleType="centerCrop") -->
             <div class="m-onb-image-wrap">
               <img
                 [src]="slides[mobileSlide].image"
@@ -36,7 +38,7 @@ import { UserRole } from '../../domain/models/models';
               />
             </div>
 
-            <!-- Contenido inferior 35% -->
+            <!-- Contenido inferior -->
             <div class="m-onb-body">
               <h2 class="m-onb-title">{{ slides[mobileSlide].title }}</h2>
               <p class="m-onb-desc">{{ slides[mobileSlide].desc }}</p>
@@ -71,15 +73,17 @@ import { UserRole } from '../../domain/models/models';
 
         <!-- 3. PANTALLAS DE LOGIN / REGISTRO / RECUPERAR CONTRASEÑA EN MÓVIL (activity_login.xml / activity_register.xml) -->
         <div *ngIf="mobileStep === 'auth'" class="m-auth-screen">
-          <!-- MODO LOGIN MÓVIL (activity_login.xml) -->
-          <div *ngIf="mode === 'login'" class="m-auth-container">
-            <img src="assets/images/logo_raw.png" alt="CakeByte" class="m-logo-login" />
-            <h1 class="m-auth-heading">Iniciar Sesión</h1>
+          <!-- MODO LOGIN MÓVIL (activity_login.xml - ConstraintLayout fijo sin scroll) -->
+          <div *ngIf="mode === 'login'" class="m-auth-container m-login-fit">
+            <div class="m-auth-top-group">
+              <img src="assets/images/logo_raw.png" alt="CakeByte" class="m-logo-login" />
+              <h1 class="m-auth-heading">Iniciar Sesión</h1>
+            </div>
 
             <div *ngIf="errorMsg" class="alert-box alert-error m-alert">{{ errorMsg }}</div>
             <div *ngIf="successMsg" class="alert-box alert-success m-alert">{{ successMsg }}</div>
 
-            <form (ngSubmit)="onLogin()" class="m-form">
+            <form (ngSubmit)="onLogin()" class="m-form m-form-login">
               <label class="m-label">Correo electrónico</label>
               <input
                 type="email"
@@ -90,12 +94,7 @@ import { UserRole } from '../../domain/models/models';
                 required
               />
 
-              <div class="m-password-header">
-                <label class="m-label mb-0">Contraseña</label>
-                <button type="button" class="m-forgot-link" (click)="switchMode('forgot')">
-                  ¿Olvidaste tu contraseña?
-                </button>
-              </div>
+              <label class="m-label">Contraseña</label>
               <input
                 type="password"
                 class="m-outlined-input"
@@ -105,39 +104,54 @@ import { UserRole } from '../../domain/models/models';
                 required
               />
 
-              <label class="m-keep-signed">
-                <input type="checkbox" checked />
-                <span>Mantenerme conectado</span>
-              </label>
+              <div class="m-forgot-under-pass">
+                <button type="button" class="m-forgot-link" (click)="switchMode('forgot')">
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
 
               <button type="submit" class="m-btn-salmon" [disabled]="loading">
                 {{ loading ? 'Ingresando...' : 'Ingresar' }}
               </button>
 
-              <div class="m-divider-row">
-                <span class="m-line"></span>
-                <span class="m-or-text">o inicia sesión con</span>
-                <span class="m-line"></span>
-              </div>
-
-              <button type="button" class="m-btn-google" (click)="onGoogleInfo()">
+              <button
+                type="button"
+                class="m-btn-google"
+                (click)="onGoogleSignIn()"
+                [disabled]="loading"
+              >
                 Continuar con Google
               </button>
 
-              <p class="m-bottom-switch" (click)="switchMode('register')">
-                ¿No tienes una cuenta? <strong>Regístrate</strong>
-              </p>
+              <!-- BOTÓN ACCEDER CON HUELLA DACTILAR (SOLO TELÉFONO - activity_login.xml #btnBiometric) -->
+              <button
+                type="button"
+                class="m-btn-biometric"
+                (click)="onBiometricClick()"
+                [disabled]="loading"
+              >
+                <span class="m-biometric-icon-circle">
+                  <ion-icon name="finger-print-outline"></ion-icon>
+                </span>
+                <span class="m-biometric-text">Acceder con huella</span>
+              </button>
             </form>
+
+            <p class="m-bottom-switch" (click)="switchMode('register')">
+              ¿No tienes una cuenta? <strong>Regístrate</strong>
+            </p>
           </div>
 
-          <!-- MODO REGISTRO MÓVIL (activity_register.xml) -->
-          <div *ngIf="mode === 'register'" class="m-auth-container">
-            <img src="assets/images/logo_raw.png" alt="CakeByte" class="m-logo-register" />
-            <h1 class="m-auth-heading">Registrarse</h1>
+          <!-- MODO REGISTRO MÓVIL (activity_register.xml - ajustado para caber en pantalla sin scroll) -->
+          <div *ngIf="mode === 'register'" class="m-auth-container m-register-fit">
+            <div class="m-auth-top-group">
+              <img src="assets/images/logo_raw.png" alt="CakeByte" class="m-logo-register" />
+              <h1 class="m-auth-heading">Registrarse</h1>
+            </div>
 
             <div *ngIf="errorMsg" class="alert-box alert-error m-alert">{{ errorMsg }}</div>
 
-            <form (ngSubmit)="onRegister()" class="m-form">
+            <form (ngSubmit)="onRegister()" class="m-form m-form-register">
               <label class="m-label">Nombre</label>
               <input
                 type="text"
@@ -196,20 +210,22 @@ import { UserRole } from '../../domain/models/models';
               <button type="submit" class="m-btn-salmon" [disabled]="loading">
                 {{ loading ? 'Registrando...' : 'Registrarse' }}
               </button>
-
-              <p class="m-bottom-switch" (click)="switchMode('login')">
-                ¿Ya tienes una cuenta? <strong>Inicia sesión</strong>
-              </p>
             </form>
+
+            <p class="m-bottom-switch" (click)="switchMode('login')">
+              ¿Ya tienes una cuenta? <strong>Inicia sesión</strong>
+            </p>
           </div>
 
           <!-- MODO RECUPERAR CONTRASEÑA MÓVIL -->
-          <div *ngIf="mode === 'forgot'" class="m-auth-container">
-            <img src="assets/images/logo_raw.png" alt="CakeByte" class="m-logo-register" />
-            <h1 class="m-auth-heading">Recuperar Contraseña</h1>
-            <p class="m-forgot-desc">
-              Ingresa tu correo electrónico para recibir las instrucciones de recuperación.
-            </p>
+          <div *ngIf="mode === 'forgot'" class="m-auth-container m-login-fit">
+            <div class="m-auth-top-group">
+              <img src="assets/images/logo_raw.png" alt="CakeByte" class="m-logo-register" />
+              <h1 class="m-auth-heading">Recuperar Contraseña</h1>
+              <p class="m-forgot-desc">
+                Ingresa tu correo electrónico para recibir las instrucciones de recuperación.
+              </p>
+            </div>
 
             <div *ngIf="errorMsg" class="alert-box alert-error m-alert">{{ errorMsg }}</div>
             <div *ngIf="successMsg" class="alert-box alert-success m-alert">{{ successMsg }}</div>
@@ -226,11 +242,46 @@ import { UserRole } from '../../domain/models/models';
               />
 
               <button type="submit" class="m-btn-salmon">Enviar enlace</button>
-
-              <p class="m-bottom-switch" (click)="switchMode('login')">
-                <strong>Volver a Iniciar Sesión</strong>
-              </p>
             </form>
+
+            <p class="m-bottom-switch" (click)="switchMode('login')">
+              <strong>Volver a Iniciar Sesión</strong>
+            </p>
+          </div>
+        </div>
+
+        <!-- DIÁLOGO BIOMÉTRICO EN MÓVIL (BiometricPrompt de LoginActivity.kt) -->
+        <div
+          class="m-biometric-backdrop"
+          *ngIf="showBiometricSheet"
+          (click)="showBiometricSheet = false"
+        >
+          <div class="m-biometric-dialog" (click)="$event.stopPropagation()">
+            <h3 class="m-bio-title">Ingreso Rápido</h3>
+            <p class="m-bio-subtitle">Usa tu huella para entrar a Cake Byte</p>
+            <small class="m-bio-account" *ngIf="biometricEmail">
+              Cuenta vinculada: {{ biometricEmail }}
+            </small>
+
+            <button
+              type="button"
+              class="m-bio-sensor-btn"
+              (click)="confirmBiometricSensor()"
+              title="Toca el sensor de huella"
+            >
+              <ion-icon name="finger-print-outline"></ion-icon>
+            </button>
+            <span class="m-bio-hint">Toca el sensor de huella dactilar</span>
+
+            <div class="m-bio-actions">
+              <button
+                type="button"
+                class="m-bio-cancel"
+                (click)="showBiometricSheet = false"
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -337,6 +388,15 @@ import { UserRole } from '../../domain/models/models';
 
               <button type="submit" class="cb-btn-primary w-full" [disabled]="loading">
                 {{ loading ? 'Ingresando...' : 'Ingresar' }}
+              </button>
+
+              <button
+                type="button"
+                class="cb-btn-outline w-full mt-2"
+                (click)="onGoogleSignIn()"
+                [disabled]="loading"
+              >
+                Continuar con Google
               </button>
             </form>
 
@@ -459,27 +519,41 @@ import { UserRole } from '../../domain/models/models';
     }
 
     /* ============================================================ */
-    /* ESTILOS NATIVOS DE TELÉFONO (<= 768px)                       */
+    /* ESTILOS NATIVOS DE TELÉFONO (<= 768px) SIN SCROLL            */
     /* ============================================================ */
     @media (max-width: 768px) {
+      :host {
+        height: 100%;
+        overflow: hidden;
+      }
+      .auth-ion-content {
+        --overflow: hidden !important;
+        overflow: hidden !important;
+      }
       .desktop-auth-flow {
         display: none !important;
       }
       .mobile-auth-flow {
-        display: block;
-        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        max-height: 100%;
+        width: 100%;
+        overflow: hidden;
         background: #FFFFFF;
       }
 
       /* 1. SPLASH SCREEN (activity_main.xml) */
       .m-splash {
-        min-height: 100vh;
+        flex: 1;
+        height: 100%;
         width: 100%;
         background: #FFFFFF;
         display: flex;
         align-items: center;
         justify-content: center;
         padding: 24px;
+        overflow: hidden;
       }
       .m-splash-center {
         text-align: center;
@@ -502,7 +576,8 @@ import { UserRole } from '../../domain/models/models';
       /* 2. ONBOARDING INTERACTIVO (activity_onboarding.xml + item_onboarding.xml) */
       .m-onboarding {
         position: relative;
-        height: 100vh;
+        flex: 1;
+        height: 100%;
         width: 100%;
         background: #FFFFFF;
         overflow: hidden;
@@ -513,10 +588,10 @@ import { UserRole } from '../../domain/models/models';
         flex: 1;
         display: flex;
         flex-direction: column;
-        height: 100%;
+        overflow: hidden;
       }
       .m-onb-image-wrap {
-        height: 62vh;
+        height: 55%;
         width: 100%;
         overflow: hidden;
       }
@@ -529,7 +604,7 @@ import { UserRole } from '../../domain/models/models';
       }
       .m-onb-body {
         flex: 1;
-        padding: 28px 32px 90px;
+        padding: 20px 28px 84px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -540,11 +615,11 @@ import { UserRole } from '../../domain/models/models';
         font-size: 24px;
         font-weight: 700;
         color: #000000;
-        margin: 0 0 14px;
+        margin: 0 0 10px;
       }
       .m-onb-desc {
         font-size: 15px;
-        line-height: 1.5;
+        line-height: 1.45;
         color: #757575;
         margin: 0;
       }
@@ -563,7 +638,7 @@ import { UserRole } from '../../domain/models/models';
         position: absolute;
         left: 24px;
         right: 24px;
-        bottom: 64px;
+        bottom: 48px;
         z-index: 10;
         background: #FF8B6A;
         color: #FFFFFF;
@@ -576,7 +651,7 @@ import { UserRole } from '../../domain/models/models';
       }
       .m-indicator-bars {
         position: absolute;
-        bottom: 32px;
+        bottom: 20px;
         left: 0;
         right: 0;
         z-index: 10;
@@ -596,21 +671,38 @@ import { UserRole } from '../../domain/models/models';
       }
 
       /* 3. LOGIN & REGISTRO MÓVIL (activity_login.xml + activity_register.xml) */
+      /* Tamaños grandes originales pero fijos en pantalla sin scroll           */
       .m-auth-screen {
-        min-height: 100vh;
+        flex: 1;
+        height: 100%;
+        max-height: 100%;
         background: #FFFFFF;
-        padding: 28px 32px 40px;
+        padding: 16px 28px 20px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
       }
       .m-auth-container {
+        flex: 1;
+        height: 100%;
+        width: 100%;
+        max-width: 420px;
+        margin: 0 auto;
         display: flex;
         flex-direction: column;
         align-items: center;
-        max-width: 420px;
-        margin: 0 auto;
+        justify-content: flex-start;
+        overflow: hidden;
+      }
+      .m-auth-top-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex-shrink: 0;
       }
       .m-logo-login {
-        width: 120px;
-        height: 120px;
+        width: 115px;
+        height: 115px;
         object-fit: contain;
         margin-top: 12px;
       }
@@ -624,22 +716,30 @@ import { UserRole } from '../../domain/models/models';
         font-size: 32px;
         font-weight: 700;
         color: #FF8B6A;
-        margin: 12px 0 24px;
+        margin: 12px 0 20px;
         text-align: center;
+      }
+      .m-register-fit .m-auth-heading {
+        margin: 10px 0 16px;
       }
       .m-forgot-desc {
         text-align: center;
         color: #757575;
         font-size: 14px;
-        margin: -10px 0 20px;
+        margin: -6px 0 18px;
       }
       .m-alert {
         width: 100%;
+        padding: 10px 14px;
+        font-size: 13px;
+        margin-bottom: 10px;
+        flex-shrink: 0;
       }
       .m-form {
         width: 100%;
         display: flex;
         flex-direction: column;
+        justify-content: flex-start;
       }
       .m-label {
         font-size: 14px;
@@ -648,23 +748,12 @@ import { UserRole } from '../../domain/models/models';
         margin-bottom: 6px;
         margin-top: 14px;
       }
-      .m-label.mb-0 {
-        margin: 0;
+      .m-register-fit .m-label {
+        margin-top: 12px;
+        margin-bottom: 5px;
       }
-      .m-password-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 14px;
-        margin-bottom: 6px;
-      }
-      .m-forgot-link {
-        background: none;
-        border: none;
-        color: #FF8B6A;
-        font-size: 12px;
-        font-weight: 600;
-        padding: 0;
+      .m-label:first-of-type {
+        margin-top: 0;
       }
       .m-outlined-input {
         width: 100%;
@@ -676,29 +765,37 @@ import { UserRole } from '../../domain/models/models';
         background: #FFFFFF;
         outline: none;
       }
+      .m-register-fit .m-outlined-input {
+        padding: 13px 16px;
+      }
       .m-outlined-input:focus {
         border-color: #FF8B6A;
       }
-      .m-keep-signed {
+      .m-forgot-under-pass {
         display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 14px;
-        font-size: 14px;
-        color: #000000;
+        justify-content: flex-end;
+        margin-top: 10px;
+      }
+      .m-forgot-link {
+        background: none;
+        border: none;
+        color: #FF8B6A;
+        font-size: 12.5px;
+        font-weight: 600;
+        padding: 0;
       }
       .m-terms-row {
         display: flex;
-        align-items: flex-start;
-        gap: 8px;
-        margin-top: 18px;
+        align-items: center;
+        gap: 10px;
+        margin-top: 16px;
         font-size: 12px;
         color: #757575;
-        line-height: 1.4;
+        line-height: 1.35;
       }
       .m-btn-salmon {
         width: 100%;
-        margin-top: 22px;
+        margin-top: 24px;
         padding: 16px;
         background: #FF8B6A;
         color: #FFFFFF;
@@ -707,37 +804,145 @@ import { UserRole } from '../../domain/models/models';
         font-size: 18px;
         font-weight: 700;
       }
-      .m-divider-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin: 22px 0;
-      }
-      .m-line {
-        flex: 1;
-        height: 1px;
-        background: #EEEEEE;
-      }
-      .m-or-text {
-        font-size: 12px;
-        color: #757575;
+      .m-register-fit .m-btn-salmon {
+        margin-top: 20px;
+        padding: 15px;
       }
       .m-btn-google {
         width: 100%;
-        padding: 13px;
+        margin-top: 16px;
+        padding: 15px;
         background: #FFFFFF;
-        color: #757575;
-        border: 1px solid #EEEEEE;
+        color: #000000;
+        border: 1.5px solid #FF8B6A;
         border-radius: 12px;
-        font-size: 15px;
+        font-size: 15.5px;
         font-weight: 600;
       }
+
+      /* BOTÓN ACCEDER CON HUELLA (activity_login.xml #btnBiometric) */
+      .m-btn-biometric {
+        margin: 22px auto 0;
+        background: none;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        cursor: pointer;
+      }
+      .m-btn-biometric:active {
+        background: #FFF1EB;
+      }
+      .m-biometric-icon-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #FF8B6A;
+        color: #FFFFFF;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        box-shadow: 0 4px 12px rgba(255, 139, 106, 0.35);
+      }
+      .m-biometric-text {
+        color: #FF8B6A;
+        font-size: 16px;
+        font-weight: 700;
+      }
+
       .m-bottom-switch {
-        margin-top: 24px;
+        margin-top: 22px;
         text-align: center;
         color: #FF8B6A;
-        font-size: 14px;
+        font-size: 14.5px;
         cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      /* MODAL / SHEET BIOMÉTRICO ANDROID (BiometricPrompt) */
+      .m-biometric-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 400;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+      }
+      .m-biometric-dialog {
+        width: 100%;
+        max-width: 480px;
+        background: #FFFFFF;
+        border-radius: 28px 28px 0 0;
+        padding: 28px 24px 32px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.2);
+      }
+      .m-bio-title {
+        margin: 0 0 6px;
+        font-size: 20px;
+        font-weight: 700;
+        color: #000000;
+      }
+      .m-bio-subtitle {
+        margin: 0 0 8px;
+        font-size: 14px;
+        color: #757575;
+      }
+      .m-bio-account {
+        display: block;
+        margin-bottom: 18px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #FF8B6A;
+        background: #FFF1EB;
+        padding: 4px 12px;
+        border-radius: 999px;
+      }
+      .m-bio-sensor-btn {
+        margin: 12px 0 10px;
+        width: 76px;
+        height: 76px;
+        border-radius: 50%;
+        border: 2px solid #FF8B6A;
+        background: #FFF1EB;
+        color: #FF8B6A;
+        font-size: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 6px 20px rgba(255, 139, 106, 0.28);
+      }
+      .m-bio-sensor-btn:active {
+        background: #FF8B6A;
+        color: #FFFFFF;
+        transform: scale(0.95);
+      }
+      .m-bio-hint {
+        font-size: 13px;
+        color: #757575;
+        margin-bottom: 20px;
+      }
+      .m-bio-actions {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+      }
+      .m-bio-cancel {
+        background: none;
+        border: none;
+        color: #FF8B6A;
+        font-size: 15px;
+        font-weight: 700;
+        padding: 8px 16px;
       }
     }
 
@@ -957,10 +1162,49 @@ import { UserRole } from '../../domain/models/models';
   `],
 })
 export class AuthPage implements OnInit, OnDestroy {
+  isMobileViewport = typeof window !== 'undefined' ? window.innerWidth <= 768 : true;
+
   /* Estado para el flujo móvil original (Splash -> Onboarding -> Login) */
   mobileStep: 'splash' | 'onboarding' | 'auth' = 'splash';
   mobileSlide = 0;
   private splashTimeoutId: any = null;
+
+  /* Estado de autenticación biométrica con huella en teléfono */
+  showBiometricSheet = false;
+  biometricEmail: string | null = null;
+  private nativeBiometricListener = (ev: Event) => {
+    const customEv = ev as CustomEvent<{ success: boolean; message?: string }>;
+    this.zone.run(() => {
+      if (customEv.detail?.success) {
+        this.completeBiometricLogin();
+      } else if (customEv.detail?.message) {
+        this.errorMsg = customEv.detail.message;
+      }
+    });
+  };
+
+  /* Listener nativo para Google CredentialManager (LoginActivity.kt -> signInWithGoogle) */
+  private nativeGoogleListener = (ev: Event) => {
+    const customEv = ev as CustomEvent<{ success: boolean; idToken?: string; message?: string }>;
+    this.zone.run(async () => {
+      if (customEv.detail?.success && customEv.detail?.idToken) {
+        this.loading = true;
+        const { user, error } = await this.authRepo.loginWithGoogleIdToken(customEv.detail.idToken);
+        this.loading = false;
+        if (error || !user) {
+          this.errorMsg = error || 'Error al iniciar sesión con Google.';
+          return;
+        }
+        sessionStorage.setItem('cakebyte_onboarding_seen', '1');
+        this.navigateByRole(user.role);
+      } else {
+        this.loading = false;
+        if (customEv.detail?.message) {
+          this.errorMsg = customEv.detail.message;
+        }
+      }
+    });
+  };
 
   /* Estado compartido y de escritorio */
   mode: 'login' | 'register' | 'forgot' = 'login';
@@ -1001,20 +1245,52 @@ export class AuthPage implements OnInit, OnDestroy {
     },
   ];
 
-  constructor(private authRepo: AuthRepository, private router: Router) {}
+  constructor(
+    private authRepo: AuthRepository,
+    private router: Router,
+    private zone: NgZone
+  ) {}
 
-  ngOnInit(): void {
+  @HostListener('window:resize')
+  onResize(): void {
+    this.isMobileViewport = window.innerWidth <= 768;
+  }
+
+  async ngOnInit(): Promise<void> {
+    this.isMobileViewport = typeof window !== 'undefined' ? window.innerWidth <= 768 : true;
     this.startAutoSlide();
-    /* Igual que MainActivity.kt: Splash de 2 segundos antes de pasar al Onboarding */
-    this.splashTimeoutId = setTimeout(() => {
-      if (this.mobileStep === 'splash') {
-        this.mobileStep = 'onboarding';
-      }
-    }, 2000);
+    window.addEventListener('cakebyte-biometric-result', this.nativeBiometricListener);
+    window.addEventListener('cakebyte-google-result', this.nativeGoogleListener);
+
+    this.biometricEmail = await this.authRepo.getBiometricEmail();
+    if (this.biometricEmail && !this.loginEmail) {
+      this.loginEmail = this.biometricEmail;
+    }
+
+    // Si regresa de un flujo OAuth de Google con sesión activa en Supabase, redirigir según rol
+    const restored = await this.authRepo.restoreSession();
+    if (restored) {
+      sessionStorage.setItem('cakebyte_onboarding_seen', '1');
+      this.navigateByRole(restored.role);
+      return;
+    }
+
+    // Si el usuario ya vio el onboarding en esta sesión (ej. al cerrar sesión), ir directo al Login
+    if (sessionStorage.getItem('cakebyte_onboarding_seen') === '1') {
+      this.mobileStep = 'auth';
+    } else {
+      this.splashTimeoutId = setTimeout(() => {
+        if (this.mobileStep === 'splash') {
+          this.mobileStep = 'onboarding';
+        }
+      }, 2000);
+    }
   }
 
   ngOnDestroy(): void {
     this.stopAutoSlide();
+    window.removeEventListener('cakebyte-biometric-result', this.nativeBiometricListener);
+    window.removeEventListener('cakebyte-google-result', this.nativeGoogleListener);
     if (this.splashTimeoutId) {
       clearTimeout(this.splashTimeoutId);
     }
@@ -1040,6 +1316,7 @@ export class AuthPage implements OnInit, OnDestroy {
   }
 
   goToMobileAuth(initialMode: 'login' | 'register'): void {
+    sessionStorage.setItem('cakebyte_onboarding_seen', '1');
     this.mode = initialMode;
     this.mobileStep = 'auth';
   }
@@ -1069,9 +1346,65 @@ export class AuthPage implements OnInit, OnDestroy {
     this.successMsg = '';
   }
 
-  onGoogleInfo(): void {
+  /**
+   * Inicio de sesión REAL con Google:
+   * - En Android nativo invoca CredentialManager + GoogleIdTokenCredential (igual que LoginActivity.kt)
+   * - En navegador web inicia el flujo OAuth real de Google con Supabase
+   */
+  async onGoogleSignIn(): Promise<void> {
     this.errorMsg = '';
-    this.successMsg = 'Inicia sesión con tu correo registrado en CakeByte.';
+    this.successMsg = '';
+
+    const nativeBridge = (window as any).CakeByteNative;
+    if (nativeBridge && typeof nativeBridge.signInWithGoogle === 'function') {
+      this.loading = true;
+      nativeBridge.signInWithGoogle();
+      return;
+    }
+
+    this.loading = true;
+    const { error } = await this.authRepo.loginWithGoogleOAuth();
+    if (error) {
+      this.loading = false;
+      this.errorMsg = error;
+    }
+  }
+
+  async onBiometricClick(): Promise<void> {
+    this.errorMsg = '';
+    this.successMsg = '';
+    this.biometricEmail = await this.authRepo.getBiometricEmail();
+
+    const nativeBridge = (window as any).CakeByteNative;
+    if (nativeBridge && typeof nativeBridge.authenticateBiometric === 'function') {
+      nativeBridge.authenticateBiometric();
+      return;
+    }
+
+    this.showBiometricSheet = true;
+  }
+
+  async confirmBiometricSensor(): Promise<void> {
+    try {
+      await Haptics.impact({ style: ImpactStyle.Medium });
+    } catch {
+      // Ignorar si el navegador no soporta vibración háptica
+    }
+    this.showBiometricSheet = false;
+    await this.completeBiometricLogin();
+  }
+
+  private async completeBiometricLogin(): Promise<void> {
+    this.loading = true;
+    const { user, error } = await this.authRepo.loginWithBiometric(this.loginEmail);
+    this.loading = false;
+
+    if (error || !user) {
+      this.errorMsg = error || 'No se pudo autenticar con huella.';
+      return;
+    }
+    sessionStorage.setItem('cakebyte_onboarding_seen', '1');
+    this.navigateByRole(user.role);
   }
 
   async onLogin(): Promise<void> {
@@ -1088,6 +1421,7 @@ export class AuthPage implements OnInit, OnDestroy {
       this.errorMsg = error || 'No se pudo iniciar sesión.';
       return;
     }
+    sessionStorage.setItem('cakebyte_onboarding_seen', '1');
     this.navigateByRole(user.role);
   }
 
@@ -1121,6 +1455,7 @@ export class AuthPage implements OnInit, OnDestroy {
       this.errorMsg = error || 'Error al registrar la cuenta.';
       return;
     }
+    sessionStorage.setItem('cakebyte_onboarding_seen', '1');
     this.navigateByRole(user.role);
   }
 
