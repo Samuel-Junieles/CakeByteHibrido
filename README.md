@@ -1,6 +1,6 @@
 # 🍰 CakeByteApp Híbrido — Plataforma Multiplataforma de Repostería Digital
 
-**CakeByteApp Híbrido** es una aplicación multiplataforma (**Web Responsive + Android Nativo**) diseñada para modernizar y digitalizar el ecosistema de la repostería artesanal. Construida con **Ionic Framework 8**, **Angular 19**, **Capacitor 7** y **Supabase**, combina una experiencia móvil nativa en teléfonos Android con una interfaz web de escritorio completa, conectadas en tiempo real a una misma base de datos en la nube.
+**CakeByteApp Híbrido** es una aplicación multiplataforma (**Web Responsive + Android Nativo**) diseñada para modernizar y digitalizar el ecosistema de la repostería artesanal. Construida con **Ionic Framework 8**, **Angular 19**, **Capacitor 7** y **Supabase**, combina una experiencia móvil nativa en teléfonos Android con una interfaz web de escritorio completa, conectadas en tiempo real a una misma base de datos en la nube con seguridad basada en **JWT (JSON Web Tokens)** y **RBAC (Role-Based Access Control)**.
 
 ---
 
@@ -9,8 +9,8 @@
 El sistema implementa los principios de **Clean Architecture** adaptados a una aplicación híbrida reactiva con componentes *Standalone* de Angular y programación reactiva mediante **RxJS**:
 
 1. **Capa Core (`src/app/core`):**
-   - Configuración del cliente de conexión a la nube (**Supabase**).
-   - **Guards de Seguridad (`authGuard` y `roleGuard`):** Protección de rutas privadas y validación de permisos según el rol activo del usuario (`Admin`, `Vendedor`, `Comprador`).
+   - Configuración del cliente de conexión a la nube (**Supabase**) con persistencia y refresco automático de tokens **JWT**.
+   - **Control de Acceso Basado en Roles — RBAC (`authGuard` y `roleGuard`):** Protección de rutas privadas, verificación de sesión activa mediante **JWT** y autorización estricta según el rol del usuario (`Admin`, `Vendedor`, `Comprador`).
 2. **Capa de Dominio (`src/app/domain`):**
    - Modelos y entidades de negocio (`UserEntity`, `ProductEntity`, `OrderEntity`, `CartItemEntity`, `DashboardStats`, `CapturedPhoto`).
 3. **Capa de Datos (`src/app/data/services`):**
@@ -38,24 +38,25 @@ El sistema implementa los principios de **Clean Architecture** adaptados a una a
 
 ### APIs Nativas de Android Integradas (`MainActivity.java`)
 - **API Biométrica de Huella Dactilar (`androidx.biometric:biometric`):** Diálogo nativo `BiometricPrompt` disponible exclusivamente en la versión móvil para ingreso rápido mediante el sensor de huella del teléfono.
-- **Google Identity Services & Credential Manager (`androidx.credentials` + `GoogleIdTokenCredential`):** Autenticación real con cuentas de Google del dispositivo en Android y flujo OAuth 2.0 en navegadores web.
+- **Google Identity Services & Credential Manager (`androidx.credentials` + `GoogleIdTokenCredential`):** Autenticación real con cuentas de Google del dispositivo en Android mediante validación de **ID Token (JWT)** y flujo OAuth 2.0 en navegadores web.
 
-### Base de Datos en la Nube (Supabase BaaS)
+### Base de Datos en la Nube y Seguridad (Supabase BaaS + JWT + RBAC)
 - **PostgreSQL en la Nube:** Persistencia centralizada de usuarios, roles, catálogo de productos/tortas y pedidos.
+- **Autenticación con JWT (JSON Web Tokens):** Gestión de sesiones seguras mediante tokens **JWT** firmados por **Supabase Auth** y validación de **Google ID Tokens (JWT)** con renovación automática de sesión (`autoRefreshToken`).
+- **Autorización RBAC (Role-Based Access Control):** Modelo de control de acceso basado en roles almacenados en la base de datos (`roles` y `usuarios`), aplicado tanto en los *Route Guards* (`authGuard`, `roleGuard`) como en las vistas y operaciones permitidas para cada perfil (`Admin`, `Vendedor`, `Comprador`).
 - **Sincronización Universal en Tiempo Real (`Supabase Realtime`):** Los cambios realizados desde el teléfono (como actualizar la foto de perfil, agregar una nueva torta con foto de la cámara o cambiar el estado de un pedido) se reflejan automáticamente en la versión web y viceversa.
-- **Supabase Auth:** Gestión de sesiones seguras, inicio de sesión con credenciales, integración con proveedor Google y validación de rutas protegidas.
 
 ---
 
 ## ✨ Funcionalidades Principales
 
-### 🔐 Autenticación y Seguridad
+### 🔐 Autenticación, JWT y Control de Acceso (RBAC)
 - **Splash Screen & Onboarding Interactivo:** Presentación guiada en móvil y carrusel dinámico en escritorio.
-- **Inicio de Sesión Multi-método:**
-  - Correo electrónico y contraseña.
-  - **Continuar con Google:** Consumo real de la API de Google Identity / OAuth sincronizada con la tabla de usuarios en la nube.
+- **Inicio de Sesión Multi-método con JWT:**
+  - Correo electrónico y contraseña autenticados contra **Supabase Auth (JWT)**.
+  - **Continuar con Google:** Consumo real de la API de Google Identity / OAuth, verificación de **JWT (`idToken`)** y sincronización automática con la tabla de usuarios en la nube.
   - **Acceder con Huella Dactilar:** Exclusivo para teléfono mediante el lector biométrico de Android.
-- **Rutas Protegidas:** Bloqueo de acceso no autorizado y redirección automática según el rol (`Admin`, `Vendedor` o `Comprador`).
+- **Arquitectura RBAC y Rutas Protegidas:** Bloqueo de acceso no autorizado y redirección automática según el rol asignado (`Admin` → `/admin`, `Vendedor` → `/vendor`, `Comprador` → `/buyer`).
 
 ### 🛒 Módulo de Comprador (`/buyer`)
 - **Carrusel de Ofertas de Hoy:** Banners promocionales interactivos en la pantalla de inicio.
@@ -69,7 +70,7 @@ El sistema implementa los principios de **Clean Architecture** adaptados a una a
 
 ### 🛡️ Módulo de Administrador (`/admin`)
 - **Dashboard Global:** Métricas consolidadas del negocio en tiempo real.
-- **Gestión de Usuarios Multi-rol:** Creación, edición de roles (`Admin`, `Vendedor`, `Comprador`), visualización de avatares sincronizados y eliminación de cuentas.
+- **Gestión de Usuarios y Roles (RBAC):** Creación, asignación y edición de roles (`Admin`, `Vendedor`, `Comprador`), visualización de avatares sincronizados y eliminación de cuentas.
 - **Auditoría y CRUD de Productos:** Control total de existencias (*En stock* / *Fuera de stock*), precios, categorías y fotografías.
 
 ### 👤 Perfil Universal (`/profile`)
